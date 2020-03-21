@@ -24,6 +24,7 @@ import android.graphics.BitmapFactory;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.media.RemoteControlClient;
 import android.media.session.MediaSession;
 import android.os.Binder;
 import android.os.Build;
@@ -125,8 +126,8 @@ public class BluetoothLeService extends Service {
 
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                intentAction = ACTION_GATT_DISCONNECTED;
                 mConnectionState = STATE_DISCONNECTED;
+                intentAction = ACTION_GATT_DISCONNECTED;
                 //Log.i(TAG, "Disconnected from GATT server.");
                 broadcastUpdate(intentAction);
 
@@ -510,6 +511,7 @@ public class BluetoothLeService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        setMediaSession(true,true);
         //Log.i(TAG, "Service created");
         createNotificationChannel();
 
@@ -534,7 +536,7 @@ public class BluetoothLeService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         startCLRForegroundService();
-        setMediaSession(true,true);
+        //TODO check if relevant to start foregroundservice twice
         //Log.d(TAG, "Service start command");
         return START_STICKY;
     }
@@ -673,7 +675,6 @@ public class BluetoothLeService extends Service {
         final BluetoothGattCharacteristic mWriteCharacteristicShutter =
                 mCustomService.getCharacteristic(UUID.fromString(GattAttributes.CANON_SHUTTER_CONTROL_CHARACTERISTIC));
         final byte[] controlChar = new byte[2];
-        //controlChar[0] = new Integer(3).byteValue();
         controlChar[1] = new Integer(1).byteValue();
         mWriteCharacteristicShutter.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         mWriteCharacteristicShutter.setValue(controlChar);
@@ -820,8 +821,7 @@ public class BluetoothLeService extends Service {
 
         if (!usingHeadset && !usingVolumeButtons)
         {
-            ms = null;
-            //ms.setMediaButtonReceiver(null);
+            ms.release();
             return;
         }
 
@@ -838,13 +838,11 @@ public class BluetoothLeService extends Service {
             ms.setPlaybackState(new PlaybackStateCompat.Builder()
                     .setState(PlaybackStateCompat.STATE_PLAYING, 0, 0) //you simulate a player which plays something.
                     .build());
-            //this will only work on Lollipop and up, see https://code.google.com/p/android/issues/detail?id=224134
+
              myVolumeProvider =
                     new VolumeProviderCompat(VolumeProviderCompat.VOLUME_CONTROL_RELATIVE, /*max volume*/100, /*initial volume level*/50) {
                         @Override
                         public void onAdjustVolume(int direction) {
-                            //if(mUsingVolumeButtons) {
-
                                 if (direction == 1) {
                                     this.setCurrentVolume(this.getCurrentVolume() - 1);
                                     currentMode = GlobalConstants.CLRModes.ONE;
@@ -855,22 +853,17 @@ public class BluetoothLeService extends Service {
                                     currentMode = GlobalConstants.CLRModes.ONE;
                                     clickShutter();
                                 }
-                            //}
+
                         }
                     };
+
             ms.setPlaybackToRemote(myVolumeProvider);
+
 
         }
 
-//            ms.setPlaybackState(new PlaybackStateCompat.Builder()
-//                    .setState(PlaybackStateCompat.STATE_NONE, 0, 0) //you simulate a player which plays something.
-//                    .build());
-//
-//            myVolumeProvider = null;
-//            ms.setPlaybackToRemote(myVolumeProvider);
-//        }
+        //TODO headset not working, solve it
 
-        //if(usingHeadset) {
         if(mUsingHeadset)
         {
             ms.setCallback(new MediaSessionCompat.Callback() {
