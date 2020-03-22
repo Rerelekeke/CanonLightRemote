@@ -176,6 +176,13 @@ public class DeviceControlActivity extends Activity {
         }catch (Exception ex){}
         getActionBar().setDisplayHomeAsUpEnabled(true);
 
+        callBluetoothService();
+
+        //Log.d(TAG, "Activity created");
+    }
+
+    private void callBluetoothService()
+    {
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         gattServiceIntent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, mDeviceName);
         gattServiceIntent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, mDeviceAddress);
@@ -211,6 +218,9 @@ public class DeviceControlActivity extends Activity {
         BluetoothLeService.isControlActivityVisible = true;
         if (BluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTED) {
             updateConnectionState(R.string.connected);
+            mBluetoothLeService.stopForegroundService();
+            BluetoothLeService.mConnectionState = BluetoothLeService.STATE_DISCONNECTED;
+            callBluetoothService();
             mBluetoothLeService.setMediaSession(true,true);
         } else if (BluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTING) {
             updateConnectionState(R.string.connecting);
