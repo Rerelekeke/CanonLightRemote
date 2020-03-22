@@ -47,6 +47,7 @@ import java.util.List;
 //TODO PROJECT ISSUES:
 //TODO give modern appareance for remote_control ( white stripe at bottom for connection infos, then big button in the middle, then VolumeButton,headsetbutton And WifiButton) -> BE SURE HOW TO CODE THIS FUNCTION BEFORE
 //TODO handle connection issue :should display "connecting"  during pairing
+//TODO try to get shorter time between 2 pics ( avoid auto play pics )
 
 
 public class MainActivity extends AppCompatActivity {
