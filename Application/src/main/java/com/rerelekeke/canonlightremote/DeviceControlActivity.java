@@ -116,14 +116,23 @@ public class DeviceControlActivity extends Activity {
             else if (GlobalConstants.ACTION_GATT_IS_PAIRED.equals(action)) {
                 mBluetoothLeService.pairAndConnectByStep(7);
                 sleep(1000);
+                updateConnectionState(R.string.connected);
             }
             else if (GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART.equals(action)) {
-                //updateConnectionState(R.string.connecting);
+                updateConnectionState(R.string.connecting);
                 mBluetoothLeService.pairAndConnectFirstPart();
+                mBluetoothLeService.isPaired();
             }
             else if (GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART.equals(action)) {
                 mBluetoothLeService.pairAndConnectSecondPart();
             }
+            else if(GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED.equals(action))
+            {
+                //if(false == mBluetoothLeService.getFullPairing()) {
+                    updateConnectionState(R.string.connected);
+                //}
+            }
+
         }
     };
 
@@ -160,6 +169,7 @@ public class DeviceControlActivity extends Activity {
         mButtonShutter = findViewById(R.id.btn_shutter);
 
         mButtonShutter.setEnabled(false);
+
 
 
 
@@ -217,7 +227,7 @@ public class DeviceControlActivity extends Activity {
 
         BluetoothLeService.isControlActivityVisible = true;
         if (BluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTED) {
-            updateConnectionState(R.string.connected);
+            updateConnectionState(R.string.disconnected);
             mBluetoothLeService.stopForegroundService();
             BluetoothLeService.mConnectionState = BluetoothLeService.STATE_DISCONNECTED;
             callBluetoothService();
@@ -292,9 +302,14 @@ public class DeviceControlActivity extends Activity {
                 if (resourceId == R.string.connected) {
                     mConnectionState.setTextColor(Color.parseColor("#FFFFFF"));
                     mButtonShutter.setEnabled(true);
+                    mBluetoothLeService.ms.setActive(true);
                 } else {
                     mConnectionState.setTextColor(Color.parseColor("#aa0000"));
                     mButtonShutter.setEnabled(false);
+                    if(mBluetoothLeService!=null)
+                    {
+                        mBluetoothLeService.ms.setActive(false);
+                    }
                 }
             }
         });
@@ -314,6 +329,7 @@ public class DeviceControlActivity extends Activity {
         intentFilter.addAction(GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART);
         intentFilter.addAction(GlobalConstants.ACTION_GATT_IS_PAIRED);
         intentFilter.addAction(GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART);
+        intentFilter.addAction(GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED);
         return intentFilter;
     }
 
