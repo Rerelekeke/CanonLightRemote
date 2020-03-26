@@ -34,6 +34,8 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.media.VolumeProviderCompat;
@@ -114,6 +116,22 @@ public class BluetoothLeService extends Service {
 
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
+    public void  vibrate(int vibrationDuration, int vibrationLoop) {
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        // Vibrate for vibrationDuration milliseconds
+        for(int i = 1;i<=vibrationLoop;i++)
+        {
+            if(i>1) sleep(vibrationDuration);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v.vibrate(VibrationEffect.createOneShot(vibrationDuration,1));
+            } else {
+                //deprecated in API 26
+                v.vibrate(vibrationDuration);
+            }
+        }
+
+    }
+
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
@@ -138,16 +156,20 @@ public class BluetoothLeService extends Service {
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 mConnectionState = STATE_DISCONNECTED;
+                vibrate(1500,1);
                 intentAction = ACTION_GATT_DISCONNECTED;
                 //Log.i(TAG, "Disconnected from GATT server.");
                 broadcastUpdate(intentAction);
 
-                if (isControlActivityVisible == false) {
-                    stopForegroundService();
-                    stopSelf();
-                }
+                stopForegroundService();
+                stopSelf();
+
+//                if (isControlActivityVisible == false) {
+//
+//                }
             }
         }
+
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
@@ -411,6 +433,7 @@ public class BluetoothLeService extends Service {
 
                 if(!mBluetoothGatt.readDescriptor(mWriteCharacteristicDescriptor))return false;
                 if(!mBluetoothGatt.setCharacteristicNotification(mWriteCharacteristic, true))return false;
+
                 break;
 
 
@@ -420,6 +443,7 @@ public class BluetoothLeService extends Service {
 
                 if(!clientConfig.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)) return false;
                 if(!mBluetoothGatt.writeDescriptor(clientConfig)) return false;
+
                 break;
 
             case 3 :
@@ -428,7 +452,7 @@ public class BluetoothLeService extends Service {
 
                 if (!mBluetoothGatt.writeCharacteristic(mWriteCharacteristic))return false;
                 //TODO sometimes got there even without full pairing
-                mFullPairing = true;
+
                 break;
 
             case 4 :
