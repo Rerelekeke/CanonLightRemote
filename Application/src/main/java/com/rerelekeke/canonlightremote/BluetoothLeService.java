@@ -34,6 +34,8 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.media.VolumeProviderCompat;
@@ -51,6 +53,7 @@ import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_CONNEC
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_DISCONNECTED;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_IS_PAIRED;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART;
+import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED;
 import static com.rerelekeke.canonlightremote.GlobalConstants.EXTRA_DATA;
@@ -103,24 +106,45 @@ public class BluetoothLeService extends Service {
     private final Handler handler1Shutter = new Handler();
     public PowerManager powerManager;
     public PowerManager.WakeLock wakeLock;
-    private MediaSessionCompat ms;
+    public  MediaSessionCompat ms;
     private boolean mUsingHeadset = false;
     private boolean mUsingVolumeButtons = false;
     private boolean mIsStarted = false;
     private VolumeProviderCompat myVolumeProvider;
+    private boolean mFullPairing = false;
+    private boolean mFirstPartPairingProcessDone = false;
 
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
+    public void  vibrate(int vibrationDuration, int vibrationLoop) {
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        // Vibrate for vibrationDuration milliseconds
+        for(int i = 1;i<=vibrationLoop;i++)
+        {
+            if(i>1) sleep(vibrationDuration);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v.vibrate(VibrationEffect.createOneShot(vibrationDuration,1));
+            } else {
+                //deprecated in API 26
+                v.vibrate(vibrationDuration);
+            }
+        }
+
+    }
+
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
 
             //Log.i(TAG, "Connection state changed");
             String intentAction;
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
-                intentAction = ACTION_GATT_CONNECTED;
-                mConnectionState = STATE_CONNECTED;
-                broadcastUpdate(intentAction);
+            if (newState == BluetoothProfile.STATE_CONNECTED /*&& mFirstPartPairingProcessDone*/) {
+
+//                if(mFirstPartPairingProcessDone) {
+//                    intentAction = ACTION_GATT_CONNECTED;
+//                    mConnectionState = STATE_CONNECTED;
+//                    broadcastUpdate(intentAction);
+//                }
                 //Log.i(TAG, "Connected to GATT server.");
 
 
@@ -132,16 +156,20 @@ public class BluetoothLeService extends Service {
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 mConnectionState = STATE_DISCONNECTED;
+                vibrate(1500,1);
                 intentAction = ACTION_GATT_DISCONNECTED;
                 //Log.i(TAG, "Disconnected from GATT server.");
                 broadcastUpdate(intentAction);
 
-                if (isControlActivityVisible == false) {
-                    stopForegroundService();
-                    stopSelf();
-                }
+                stopForegroundService();
+                stopSelf();
+
+//                if (isControlActivityVisible == false) {
+//
+//                }
             }
         }
+
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
@@ -200,6 +228,10 @@ public class BluetoothLeService extends Service {
     };
 
 
+    public  boolean getFullPairing()
+    {
+        return mFullPairing;
+    }
     private void broadcastUpdate(final String action) {
         final Intent intent = new Intent(action);
         sendBroadcast(intent);
@@ -327,7 +359,7 @@ public class BluetoothLeService extends Service {
 
     public void pairAndConnectFirstPart()
     {
-        mConnectionState = STATE_CONNECTING;
+        //mConnectionState = STATE_CONNECTING;
         Handler mHandler = new Handler();
         mHandler.postDelayed(new Runnable() {
             @Override
@@ -336,10 +368,12 @@ public class BluetoothLeService extends Service {
                 //mConnectionState = STATE_CONNECTING;
                 sleep(1000);
                 pairAndConnectByStep(1);
+                mFirstPartPairingProcessDone = true;
                 sleep(1000);
                 pairAndConnectByStep(2);
                 sleep(1000);
                 pairAndConnectByStep(3);
+
 
                 mConnectionState = STATE_CONNECTED;
             }
@@ -349,7 +383,7 @@ public class BluetoothLeService extends Service {
 
     public void pairAndConnectSecondPart()
     {
-        mConnectionState = STATE_CONNECTING;
+        //mConnectionState = STATE_CONNECTING;
         Handler mHandler = new Handler();
         mHandler.postDelayed(new Runnable() {
             @Override
@@ -399,6 +433,7 @@ public class BluetoothLeService extends Service {
 
                 if(!mBluetoothGatt.readDescriptor(mWriteCharacteristicDescriptor))return false;
                 if(!mBluetoothGatt.setCharacteristicNotification(mWriteCharacteristic, true))return false;
+
                 break;
 
 
@@ -408,6 +443,7 @@ public class BluetoothLeService extends Service {
 
                 if(!clientConfig.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)) return false;
                 if(!mBluetoothGatt.writeDescriptor(clientConfig)) return false;
+
                 break;
 
             case 3 :
@@ -415,6 +451,8 @@ public class BluetoothLeService extends Service {
                 mWriteCharacteristic.setValue(value);
 
                 if (!mBluetoothGatt.writeCharacteristic(mWriteCharacteristic))return false;
+                //TODO sometimes got there even without full pairing
+
                 break;
 
             case 4 :
@@ -756,6 +794,21 @@ public class BluetoothLeService extends Service {
 
         }
     };
+    public void isPaired()
+    {
+        final Handler timerHandler = new Handler();
+        timerHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                final Intent intent2 = new Intent(ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED);
+
+                sendBroadcast(intent2);
+
+                Intent intent = new Intent(GlobalConstants.ACTION_MSG_DELAY);
+
+            }
+        }, 1000);
+    }
 
 
     private void timerShutter(final long delayMillis, final boolean repeat) {
@@ -788,7 +841,11 @@ public class BluetoothLeService extends Service {
                     }
                     timerHandler.postDelayed(this, 1000);
                 } else {
+
+
                     Intent intent = new Intent(GlobalConstants.ACTION_MSG_DELAY);
+
+
                     if (delayValue == 0) {
                         intent.putExtra("message", Long.toString(delayValue) + "s");
                     } else {
@@ -849,7 +906,7 @@ public class BluetoothLeService extends Service {
 
         ms = new MediaSessionCompat(getApplicationContext(), getPackageName());
         ms.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        ms.setActive(true);
+        //ms.setActive(true);
 
 
         if(usingVolumeButtons) {

@@ -10,18 +10,22 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.VibrationEffect;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-
+import android.os.Vibrator;
 
 import static android.os.SystemClock.sleep;
 
@@ -47,6 +51,7 @@ public class DeviceControlActivity extends Activity {
     private boolean mConnected = false;
     private boolean mWasConnected = false;
     private Button mButtonShutter;
+
 
 
 
@@ -102,6 +107,7 @@ public class DeviceControlActivity extends Activity {
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             if (GlobalConstants.ACTION_GATT_CONNECTED.equals(action)) {
+
                 mConnected = true;
                 updateConnectionState(R.string.connected);
                 invalidateOptionsMenu();
@@ -116,16 +122,56 @@ public class DeviceControlActivity extends Activity {
             else if (GlobalConstants.ACTION_GATT_IS_PAIRED.equals(action)) {
                 mBluetoothLeService.pairAndConnectByStep(7);
                 sleep(1000);
+                updateConnectionState(R.string.connected);
             }
             else if (GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART.equals(action)) {
-                //updateConnectionState(R.string.connecting);
+                updateConnectionState(R.string.connecting);
                 mBluetoothLeService.pairAndConnectFirstPart();
+                mBluetoothLeService.isPaired();
             }
             else if (GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART.equals(action)) {
                 mBluetoothLeService.pairAndConnectSecondPart();
             }
+            else if(GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED.equals(action))
+            {
+                //if(false == mBluetoothLeService.getFullPairing()) {
+                    updateConnectionState(R.string.connected);
+                //}
+            }
+
         }
     };
+
+    public void ring() {
+        Log.d(TAG, "ring: called...");
+        long[] VIBRATE_PATTERN = {0, 1000, 1000};
+
+        AudioAttributes VIBRATE_ATTRIBUTES = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ?
+                new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).build() : null;
+        Vibrator vibrator;
+
+        vibrator = (Vibrator) getApplicationContext().getSystemService(Context.VIBRATOR_SERVICE);
+
+        AudioManager audioManager =
+                (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+
+        vibrator.cancel();
+
+        int ringerMode = audioManager.getRingerMode();
+        if (ringerMode == AudioManager.RINGER_MODE_SILENT) {
+            //No ring no vibrate
+            Log.d(TAG, "ring: skipping ring and vibrate because profile is Silent");
+        } else if (ringerMode == AudioManager.RINGER_MODE_VIBRATE || ringerMode == AudioManager.RINGER_MODE_NORMAL) {
+            // Vibrate
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                vibrator.vibrate(VIBRATE_PATTERN, 0, VIBRATE_ATTRIBUTES);
+            } else {
+                vibrator.vibrate(VIBRATE_PATTERN, 0);
+            }
+        }
+    }
+
+
 
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
@@ -160,6 +206,7 @@ public class DeviceControlActivity extends Activity {
         mButtonShutter = findViewById(R.id.btn_shutter);
 
         mButtonShutter.setEnabled(false);
+
 
 
 
@@ -217,7 +264,7 @@ public class DeviceControlActivity extends Activity {
 
         BluetoothLeService.isControlActivityVisible = true;
         if (BluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTED) {
-            updateConnectionState(R.string.connected);
+            updateConnectionState(R.string.disconnected);
             mBluetoothLeService.stopForegroundService();
             BluetoothLeService.mConnectionState = BluetoothLeService.STATE_DISCONNECTED;
             callBluetoothService();
@@ -290,11 +337,26 @@ public class DeviceControlActivity extends Activity {
             public void run() {
                 mConnectionState.setText(resourceId);
                 if (resourceId == R.string.connected) {
+
                     mConnectionState.setTextColor(Color.parseColor("#FFFFFF"));
                     mButtonShutter.setEnabled(true);
-                } else {
+                    mBluetoothLeService.ms.setActive(true);
+                    ring();
+                    mBluetoothLeService.vibrate(200,3);
+                }
+                else if (resourceId == R.string.disconnected)
+                {
+                    ring();
+                }
+
+                if (resourceId != R.string.connected)
+                {
                     mConnectionState.setTextColor(Color.parseColor("#aa0000"));
                     mButtonShutter.setEnabled(false);
+                    if(mBluetoothLeService!=null)
+                    {
+                        mBluetoothLeService.ms.setActive(false);
+                    }
                 }
             }
         });
@@ -314,6 +376,7 @@ public class DeviceControlActivity extends Activity {
         intentFilter.addAction(GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART);
         intentFilter.addAction(GlobalConstants.ACTION_GATT_IS_PAIRED);
         intentFilter.addAction(GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART);
+        intentFilter.addAction(GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED);
         return intentFilter;
     }
 
