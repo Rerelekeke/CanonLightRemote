@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
@@ -17,7 +18,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.os.VibrationEffect;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
@@ -39,7 +39,7 @@ public class DeviceControlActivity extends Activity {
     private final static String TAG = DeviceControlActivity.class.getSimpleName();
 
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
-    public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
+    public static final String EXTRAS_DEVICE_ADDRESS = "PERSISTENCY_DEVICE_ADDRESS";
 
 
     private IBinder mIBinder;
@@ -51,6 +51,7 @@ public class DeviceControlActivity extends Activity {
     private boolean mConnected = false;
     private boolean mWasConnected = false;
     private Button mButtonShutter;
+    private Button mButtonHeadset;
 
 
 
@@ -205,8 +206,10 @@ public class DeviceControlActivity extends Activity {
 
         mButtonShutter = findViewById(R.id.btn_shutter);
 
-        mButtonShutter.setEnabled(false);
+        mButtonHeadset = findViewById(R.id.btn_headset);
 
+        boolean test = MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_HEADSET,false);
+        mButtonHeadset.setSelected(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_HEADSET,false));
 
 
 
@@ -393,6 +396,22 @@ public class DeviceControlActivity extends Activity {
         mBluetoothLeService.clickShutter();
     }
 
+    public void headsetClick(View v) {
+        SharedPreferences.Editor editor = MainActivity.persistency.edit();
+        if(mButtonHeadset.isSelected()) {
+            mButtonHeadset.setSelected(false);
+            mBluetoothLeService.mUsingHeadset = false;
+            editor.putBoolean(MainActivity.PERSISTENCY_USING_HEADSET,false);
+
+        }
+        else
+        {
+            mButtonHeadset.setSelected(true);
+            mBluetoothLeService.mUsingHeadset = true;
+            editor.putBoolean(MainActivity.PERSISTENCY_USING_HEADSET,true);
+        }
+        editor.commit();
+    }
 
     private void setConfigDisplay() {
 

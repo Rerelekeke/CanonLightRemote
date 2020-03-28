@@ -65,7 +65,10 @@ public class MainActivity extends AppCompatActivity {
     private static final long SCAN_PERIOD = 10000;
     private static final String TAG = "MainActivity";
 
-    public static SharedPreferences sharedpreferences;
+    public static SharedPreferences persistency;
+    public static String PERSISTENCY_DEVICE_ADDRESS = "deviceaddress";
+    public static String PERSISTENCY_USING_HEADSET = "usingheadset";
+    public static String PERSISTENCY_USING_VOLUME_BUTTONS = "usingvolumebuttons";
 
     private void IntentDeviceConnection(BluetoothDevice device)
     {
@@ -96,7 +99,10 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setLogo(R.drawable.ic_launcher);
         getSupportActionBar().setTitle("Canon Light Remote");
 
-        sharedpreferences = getSharedPreferences("DeviceAddresssLoaded", Context.MODE_PRIVATE);
+        persistency = getSharedPreferences(PERSISTENCY_DEVICE_ADDRESS, Context.MODE_PRIVATE);
+        persistency = getSharedPreferences(PERSISTENCY_USING_HEADSET, Context.MODE_PRIVATE);
+        persistency = getSharedPreferences(PERSISTENCY_USING_VOLUME_BUTTONS, Context.MODE_PRIVATE);
+
 
 
         mHandler = new Handler();
@@ -271,7 +277,7 @@ public class MainActivity extends AppCompatActivity {
                 mLeDevices.add(device);
 
 
-                String  alreadyPairedDevice = sharedpreferences.getString("deviceaddress",null);
+                String  alreadyPairedDevice = persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null);
 
                 if(device.getAddress().equals(alreadyPairedDevice)){
                     IntentDeviceConnection(device);

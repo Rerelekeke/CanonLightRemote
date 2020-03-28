@@ -15,19 +15,15 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.pm.ComponentInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.AudioFocusRequest;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.media.RemoteControlClient;
 import android.media.session.MediaSession;
 import android.os.Binder;
 import android.os.Build;
@@ -107,7 +103,7 @@ public class BluetoothLeService extends Service {
     public PowerManager powerManager;
     public PowerManager.WakeLock wakeLock;
     public  MediaSessionCompat ms;
-    private boolean mUsingHeadset = false;
+    public boolean mUsingHeadset = false;
     private boolean mUsingVolumeButtons = false;
     private boolean mIsStarted = false;
     private VolumeProviderCompat myVolumeProvider;
@@ -494,7 +490,7 @@ public class BluetoothLeService extends Service {
                 mWriteCharacteristic.setValue(controlChar);
 
                 if (!mBluetoothGatt.writeCharacteristic(mWriteCharacteristic)) return false;
-                MainActivity.sharedpreferences = getSharedPreferences(mBluetoothDeviceAddress, Context.MODE_PRIVATE);
+
 
 
                 broadcastUpdate(ACTION_GATT_CONNECTED);
@@ -759,8 +755,8 @@ public class BluetoothLeService extends Service {
                     return;
                 }
 
-                SharedPreferences.Editor editor = MainActivity.sharedpreferences.edit();
-                editor.putString("deviceaddress", mBluetoothDeviceAddress);
+                SharedPreferences.Editor editor = MainActivity.persistency.edit();
+                editor.putString(MainActivity.PERSISTENCY_DEVICE_ADDRESS, mBluetoothDeviceAddress);
                 editor.commit();
 
                 sigLockShutter = false;
