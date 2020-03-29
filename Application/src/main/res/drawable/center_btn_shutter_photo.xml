@@ -1,38 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+<item android:state_enabled="false">
+    <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+        <item>
+            <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+                <stroke android:width="50dp" android:color="#00ff0000" />
+                <corners android:radius="50dp" />
+                <solid android:color="#ffffff"/>
+            </shape>
+        </item>
+
+        <item android:drawable="@drawable/shutter_click" />
+
+    </layer-list>
 
 
-    <item android:state_enabled="false">
-        <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-            <stroke android:width="0dp" android:color="#00ff0000" />
-            <corners android:radius="10dp" />
-            <solid android:color="#FFFFFF"/>
+</item>
 
-        </shape>
-    </item>
 
-    <item android:state_pressed="false">
+<item android:state_pressed="false" >
+    <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+        <item>
+            <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle" >
+                <stroke android:width="40dp" android:color="#00ff0000" />
+                <corners android:radius="50dp" />
+                <solid android:color="#44515d"/>
+            </shape>
+        </item>
 
-        <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+        <item android:drawable="@drawable/shutter_click" />
 
-            <stroke android:width="40dp" android:color="#00ff0000" />
-            <corners android:radius="10dp" />
-            <solid android:color="#44515d"/>
+    </layer-list>
+</item>
 
-        </shape>
 
-    </item>
+<item android:state_pressed="true">
+    <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+        <item>
+            <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+                <stroke android:width="40dp" android:color="#00ff0000" />
+                <corners android:radius="50dp" />
+                <solid android:color="#44515d"/>
+            </shape>
+        </item>
 
-    <item android:state_pressed="true">
-        <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-            <stroke android:width="100dp" android:color="#00ff0000" />
-            <corners android:radius="10dp" />
-            <solid android:color="#44515d"/>
-        </shape>
-    </item>
+        <item android:drawable="@drawable/shutter_click_pressed" />
+
+    </layer-list>
+</item>
 
 
 </selector>
+
+
+
+
 
 
 
