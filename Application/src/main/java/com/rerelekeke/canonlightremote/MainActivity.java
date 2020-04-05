@@ -69,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
     public static String PERSISTENCY_DEVICE_ADDRESS = "deviceaddress";
     public static String PERSISTENCY_USING_HEADSET = "usingheadset";
     public static String PERSISTENCY_USING_VOLUME_BUTTONS = "usingvolumebuttons";
+    public static String PERSISTENCY_USING_VIBRATOR = "usingvvibrator";
+
 
     private void IntentDeviceConnection(BluetoothDevice device)
     {

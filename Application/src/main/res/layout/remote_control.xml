@@ -115,11 +115,11 @@
 
                 <FrameLayout android:layout_width="120dp"
                     android:layout_height="120dp">
-                    <Button android:id="@+id/volumeButtons_choose_button"
+                    <Button android:id="@+id/btn_volume_buttons"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:background="@drawable/headset_choose_button"
-                        android:onClick="shutterClick"/>
+                        android:onClick="volumeButtonsClick"/>
 
                     <ImageView
                         android:layout_width="70dp"
@@ -130,11 +130,11 @@
 
                 <FrameLayout android:layout_width="120dp"
                     android:layout_height="120dp">
-                    <Button android:id="@+id/headset_choose_button2"
+                    <Button android:id="@+id/btn_vibrator"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:background="@drawable/headset_choose_button"
-                        android:onClick="shutterClick"/>
+                        android:onClick="vibrateClick"/>
 
                     <ImageView
                         android:layout_width="70dp"
