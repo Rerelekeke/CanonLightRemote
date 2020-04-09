@@ -104,14 +104,10 @@ public class BluetoothLeService extends Service {
     public PowerManager powerManager;
     public PowerManager.WakeLock wakeLock;
     public  MediaSessionCompat ms;
-    private MediaSession ms2;
     private boolean mUsingHeadset = false;
-    private boolean mUsingVolumeButtons = false;
     private boolean mUsingVibrator = false;
-    private boolean mIsStarted = false;
     public VolumeProviderCompat myVolumeProvider = null;
     private boolean mFullPairing = false;
-    private boolean mFirstPartPairingProcessDone = false;
     public PendingIntent mbrIntent;
     public PendingIntent disconnectPendingIntent;
 
@@ -125,15 +121,8 @@ public class BluetoothLeService extends Service {
 
             //Log.i(TAG, "Connection state changed");
             String intentAction;
-            if (newState == BluetoothProfile.STATE_CONNECTED /*&& mFirstPartPairingProcessDone*/) {
+            if (newState == BluetoothProfile.STATE_CONNECTED ) {
 
-
-//                if(mFirstPartPairingProcessDone) {
-//                    intentAction = ACTION_GATT_CONNECTED;
-//                    mConnectionState = STATE_CONNECTED;
-//                    broadcastUpdate(intentAction);
-//                }
-                //Log.i(TAG, "Connected to GATT server.");
 
 
                 // Attempts to discover services after successful connection.
@@ -152,9 +141,7 @@ public class BluetoothLeService extends Service {
                 stopForegroundService();
                 stopSelf();
 
-//                if (isControlActivityVisible == false) {
-//
-//                }
+
             }
         }
 
@@ -357,7 +344,6 @@ public class BluetoothLeService extends Service {
                 //mConnectionState = STATE_CONNECTING;
                 sleep(1000);
                 pairAndConnectByStep(1);
-                mFirstPartPairingProcessDone = true;
                 sleep(1000);
                 pairAndConnectByStep(2);
                 sleep(1000);
@@ -795,11 +781,11 @@ public class BluetoothLeService extends Service {
             }
 
             if (action.equals(DeviceControlActivity.USING_VIBRATOR)) {
-                mUsingVibrator = true;
+                updateVibratorUsage(true);
             }
 
             if (action.equals(DeviceControlActivity.NOT_USING_VIBRATOR)) {
-                mUsingVibrator = false;
+                updateVibratorUsage(false);
             }
 
 
@@ -923,15 +909,17 @@ public class BluetoothLeService extends Service {
         }
     }
 
-//
-//    public boolean getUsingHeadset(){return mUsingHeadset;}
-//    public boolean getUsingVolumeButtons(){return mUsingVolumeButtons;}
-//    public boolean getVibrator(){return mUsingVibrator;}
-//
-//    public void setUsingHeadset(boolean pUsingHeadset){mUsingHeadset = pUsingHeadset;}
-//    public void setUsingVolumeButtons(boolean pUsingVolumeButtons){mUsingVolumeButtons = pUsingVolumeButtons;}
-//    public void setUsingVibrator(boolean pUsingVibrator){mUsingVibrator = pUsingVibrator;}
 
+
+    public void updateVibratorUsage(boolean usingStatus)
+    {
+        mUsingVibrator = usingStatus;
+
+        SharedPreferences.Editor editor = MainActivity.persistency.edit();
+        editor.putBoolean(MainActivity.PERSISTENCY_USING_VIBRATOR,usingStatus);
+        editor.commit();
+
+    }
 
     public void updateVolumeButtonUsage(boolean usingStatus)
     {
@@ -982,18 +970,6 @@ public class BluetoothLeService extends Service {
 
 
 
-//        if (!mUsingHeadset && !mUsingVolumeButtons && ms!=null) {
-//            ms.setActive(false);
-//            ms.release();
-//            return;
-//        }
-//
-//
-//        if (mIsStarted) {
-//            ms.setActive(true);
-//
-//            return;
-//        }
 
 
         ms = new MediaSessionCompat(getApplicationContext(), getPackageName());
@@ -1010,18 +986,14 @@ public class BluetoothLeService extends Service {
                     @Override
                     public void onAdjustVolume(int direction) {
                         if (direction == 1) {
-//                            if (mUsingVolumeButtons) {
                                 this.setCurrentVolume(this.getCurrentVolume() - 1);
                                 currentMode = GlobalConstants.CLRModes.ONE;
                                 clickShutter();
-//                            }
                         }
                         if (direction == -1) {
-//                            if (mUsingVolumeButtons) {
                                 this.setCurrentVolume(this.getCurrentVolume() + 1);
                                 currentMode = GlobalConstants.CLRModes.ONE;
                                 clickShutter();
-//                            }
                         }
 
                     }
@@ -1061,17 +1033,14 @@ public class BluetoothLeService extends Service {
 
         });
 
-        //ms.setMediaButtonReceiver(disconnectPendingIntent);
+        //TODO check if follocing part really needed
         AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
                 AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT), AudioTrack.MODE_STREAM);
         audioTrack.play();
         audioTrack.stop();
         audioTrack.release();
 
-
-
         ms.setActive(true);
-		mIsStarted = true;
 
     }
 
