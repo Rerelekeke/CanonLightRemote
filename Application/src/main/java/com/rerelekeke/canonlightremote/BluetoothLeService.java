@@ -127,6 +127,7 @@ public class BluetoothLeService extends Service {
             String intentAction;
             if (newState == BluetoothProfile.STATE_CONNECTED /*&& mFirstPartPairingProcessDone*/) {
 
+
 //                if(mFirstPartPairingProcessDone) {
 //                    intentAction = ACTION_GATT_CONNECTED;
 //                    mConnectionState = STATE_CONNECTED;
@@ -542,8 +543,7 @@ public class BluetoothLeService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        setMediaSession(true,true);
-        setMediaSession(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_HEADSET,false),MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_VOLUME_BUTTONS,false));
+
         //Log.i(TAG, "Service created");
         createNotificationChannel();
 
@@ -551,7 +551,15 @@ public class BluetoothLeService extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_DISCONNECT);
         filter.addAction(ACTION_DISCONNECT_AND_STOP_FOREGROUND);
+        filter.addAction(DeviceControlActivity.USING_VIBRATOR);
+        filter.addAction(DeviceControlActivity.NOT_USING_VIBRATOR);
+        filter.addAction(DeviceControlActivity.USING_HEADSET);
+        filter.addAction(DeviceControlActivity.NOT_USING_HEADSET);
+        filter.addAction(DeviceControlActivity.USING_VOLUME_BUTTONS);
+        filter.addAction(DeviceControlActivity.NOT_USING_VOLUME_BUTTONS);
         registerReceiver(receiver, filter);
+
+        setMediaSession();
 
         IntentFilter repeatFilter = new IntentFilter(ACTION_REPEAT);
         repeatFilter.addAction(ACTION_STOP_SELF);
@@ -786,6 +794,34 @@ public class BluetoothLeService extends Service {
                 stopSelf();
             }
 
+            if (action.equals(DeviceControlActivity.USING_VIBRATOR)) {
+                mUsingVibrator = true;
+            }
+
+            if (action.equals(DeviceControlActivity.NOT_USING_VIBRATOR)) {
+                mUsingVibrator = false;
+            }
+
+
+            if (action.equals(DeviceControlActivity.USING_VOLUME_BUTTONS)) {
+                updateVolumeButtonUsage(true);
+            }
+
+            if (action.equals(DeviceControlActivity.NOT_USING_VOLUME_BUTTONS)) {
+                updateVolumeButtonUsage(false);
+            }
+
+
+            if (action.equals(DeviceControlActivity.USING_HEADSET)) {
+                updateHeadsetUsage(true);
+            }
+
+            if (action.equals(DeviceControlActivity.NOT_USING_HEADSET)) {
+                updateHeadsetUsage(false);
+            }
+
+
+
         }
     };
     public void isPaired()
@@ -887,33 +923,77 @@ public class BluetoothLeService extends Service {
         }
     }
 
-
-    public boolean getUsingHeadset(){return mUsingHeadset;}
-    public boolean getUsingVolumeButtons(){return mUsingVolumeButtons;}
-    public boolean getVibrator(){return mUsingVibrator;}
-
-    public void setUsingHeadset(boolean pUsingHeadset){mUsingHeadset = pUsingHeadset;}
-    public void setUsingVolumeButtons(boolean pUsingVolumeButtons){mUsingVolumeButtons = pUsingVolumeButtons;}
-    public void setUsingVibrator(boolean pUsingVibrator){mUsingVibrator = pUsingVibrator;}
-
-
-    public void setMediaSession(boolean usingHeadset, boolean usingVolumeButtons) {
-        setUsingHeadset(usingHeadset);
-        setUsingVolumeButtons(usingVolumeButtons);
+//
+//    public boolean getUsingHeadset(){return mUsingHeadset;}
+//    public boolean getUsingVolumeButtons(){return mUsingVolumeButtons;}
+//    public boolean getVibrator(){return mUsingVibrator;}
+//
+//    public void setUsingHeadset(boolean pUsingHeadset){mUsingHeadset = pUsingHeadset;}
+//    public void setUsingVolumeButtons(boolean pUsingVolumeButtons){mUsingVolumeButtons = pUsingVolumeButtons;}
+//    public void setUsingVibrator(boolean pUsingVibrator){mUsingVibrator = pUsingVibrator;}
 
 
-        if (!mUsingHeadset && !mUsingVolumeButtons) {
-            ms.setActive(false);
-            ms.release();
-            return;
+    public void updateVolumeButtonUsage(boolean usingStatus)
+    {
+
+        SharedPreferences.Editor editor = MainActivity.persistency.edit();
+        editor.putBoolean(MainActivity.PERSISTENCY_USING_VOLUME_BUTTONS,usingStatus);
+        editor.commit();
+
+        if(ms!=null)
+        {
+            if (usingStatus) {
+                ms.setPlaybackState(new PlaybackStateCompat.Builder()
+                        .setState(PlaybackStateCompat.STATE_PLAYING, 0, 0) //you simulate a player which plays something.
+                        .build());
+                ms.setActive(true);
+            }
+            else
+            {
+                ms.setPlaybackState(new PlaybackStateCompat.Builder()
+                        .setState(PlaybackStateCompat.STATE_STOPPED, 0, 0) //you simulate a player which plays something.
+                        .build());
+            }
         }
+    }
 
 
-        if (mIsStarted) {
-            ms.setActive(true);
+    public void updateHeadsetUsage(boolean usingStatus)
+    {
+        mUsingHeadset = usingStatus;
 
-            return;
+        SharedPreferences.Editor editor = MainActivity.persistency.edit();
+        editor.putBoolean(MainActivity.PERSISTENCY_USING_HEADSET,usingStatus);
+        editor.commit();
+
+        if(ms!=null)
+        {
+            if (usingStatus) {
+                ms.setMediaButtonReceiver(disconnectPendingIntent);
+            }
+            else
+            {
+                ms.setMediaButtonReceiver(null);
+            }
         }
+    }
+
+    public void setMediaSession() {
+
+
+
+//        if (!mUsingHeadset && !mUsingVolumeButtons && ms!=null) {
+//            ms.setActive(false);
+//            ms.release();
+//            return;
+//        }
+//
+//
+//        if (mIsStarted) {
+//            ms.setActive(true);
+//
+//            return;
+//        }
 
 
         ms = new MediaSessionCompat(getApplicationContext(), getPackageName());
@@ -922,76 +1002,72 @@ public class BluetoothLeService extends Service {
 
 
 
-        if (mUsingVolumeButtons) {
 
-            ms.setPlaybackState(new PlaybackStateCompat.Builder()
-                    .setState(PlaybackStateCompat.STATE_PLAYING, 0, 0) //you simulate a player which plays something.
-                    .build());
-            myVolumeProvider =
-                    new VolumeProviderCompat(VolumeProviderCompat.VOLUME_CONTROL_RELATIVE, /*max volume*/100, /*initial volume level*/50) {
-                        @Override
-                        public void onAdjustVolume(int direction) {
-                            if (direction == 1) {
-                                if (mUsingVolumeButtons) {
-                                    this.setCurrentVolume(this.getCurrentVolume() - 1);
-                                    currentMode = GlobalConstants.CLRModes.ONE;
-                                    clickShutter();
-                                }
-                            }
-                            if (direction == -1) {
-                                if (mUsingVolumeButtons) {
-                                    this.setCurrentVolume(this.getCurrentVolume() + 1);
-                                    currentMode = GlobalConstants.CLRModes.ONE;
-                                    clickShutter();
-                                }
-                            }
 
+
+        myVolumeProvider =
+                new VolumeProviderCompat(VolumeProviderCompat.VOLUME_CONTROL_RELATIVE, /*max volume*/100, /*initial volume level*/50) {
+                    @Override
+                    public void onAdjustVolume(int direction) {
+                        if (direction == 1) {
+//                            if (mUsingVolumeButtons) {
+                                this.setCurrentVolume(this.getCurrentVolume() - 1);
+                                currentMode = GlobalConstants.CLRModes.ONE;
+                                clickShutter();
+//                            }
                         }
-                    };
+                        if (direction == -1) {
+//                            if (mUsingVolumeButtons) {
+                                this.setCurrentVolume(this.getCurrentVolume() + 1);
+                                currentMode = GlobalConstants.CLRModes.ONE;
+                                clickShutter();
+//                            }
+                        }
 
-            ms.setPlaybackToRemote(myVolumeProvider);
+                    }
+                };
+
+        ms.setPlaybackToRemote(myVolumeProvider);
 
 
-        }
+
 
         //TODO headset not working when media player is in background, have to be solved
-        if (mUsingHeadset)
-        {
 
-            Intent disconnectIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
-            disconnectPendingIntent =
-                    PendingIntent.getBroadcast(this, 4, disconnectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Intent disconnectIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+        disconnectPendingIntent =
+                PendingIntent.getBroadcast(this, 4, disconnectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
 
 
 
-            ms.setCallback(new MediaSessionCompat.Callback() {
-                @Override
-                public boolean onMediaButtonEvent(Intent mediaButtonIntent) {
+        ms.setCallback(new MediaSessionCompat.Callback() {
+            @Override
+            public boolean onMediaButtonEvent(Intent mediaButtonIntent) {
 
-                    final KeyEvent event = mediaButtonIntent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-                    if (event != null && event.getAction() == KeyEvent.ACTION_DOWN) {
-                        switch (event.getKeyCode()) {
-                            case KeyEvent.KEYCODE_HEADSETHOOK:
-                                if(mUsingHeadset)
-                                {
-                                    clickShutter();
-                                }
-                                break;
-                        }
+                final KeyEvent event = mediaButtonIntent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+                if (event != null && event.getAction() == KeyEvent.ACTION_DOWN) {
+                    switch (event.getKeyCode()) {
+                        case KeyEvent.KEYCODE_HEADSETHOOK:
+                            if(mUsingHeadset)
+                            {
+                                clickShutter();
+                            }
+                            break;
                     }
-                    return super.onMediaButtonEvent(mediaButtonIntent);
                 }
+                return super.onMediaButtonEvent(mediaButtonIntent);
+            }
 
-            });
+        });
 
-            ms.setMediaButtonReceiver(disconnectPendingIntent);
-            AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
-                    AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT), AudioTrack.MODE_STREAM);
-            audioTrack.play();
-            audioTrack.stop();
-            audioTrack.release();
-        }
+        //ms.setMediaButtonReceiver(disconnectPendingIntent);
+        AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
+                AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT), AudioTrack.MODE_STREAM);
+        audioTrack.play();
+        audioTrack.stop();
+        audioTrack.release();
+
 
 
         ms.setActive(true);

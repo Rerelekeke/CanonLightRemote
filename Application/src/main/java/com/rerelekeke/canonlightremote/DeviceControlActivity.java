@@ -59,6 +59,12 @@ public class DeviceControlActivity extends Activity {
 
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "PERSISTENCY_DEVICE_ADDRESS";
+    public static final String USING_VIBRATOR = "USING_VIBRATOR";
+    public static final String NOT_USING_VIBRATOR = "NOT_USING_VIBRATOR";
+    public static final String USING_VOLUME_BUTTONS = "USING_VOLUME_BUTTONS";
+    public static final String NOT_USING_VOLUME_BUTTONS = "NOT_USING_VOLUME_BUTTONS";
+    public static final String USING_HEADSET = "USING_HEADSET";
+    public static final String NOT_USING_HEADSET = "NOT_USING_HEADSET";
 
 
     private IBinder mIBinder;
@@ -70,9 +76,9 @@ public class DeviceControlActivity extends Activity {
     private boolean mConnected = false;
     private boolean mWasConnected = false;
     private Button mButtonShutter;
-    private Button mButtonHeadset;
-    private Button mButtonVolumeButtons;
-    private Button mButtonVibrator;
+    public static Button mButtonHeadset;
+    public static Button mButtonVolumeButtons;
+    public static Button mButtonVibrator;
 
 
 
@@ -94,6 +100,7 @@ public class DeviceControlActivity extends Activity {
 
 
     private void initBluetoothConnection(IBinder service) {
+        initButtons();
         mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
         mWasConnected = true;
         if (!mBluetoothLeService.initialize()) {
@@ -106,6 +113,7 @@ public class DeviceControlActivity extends Activity {
             mConnected = true;
             updateConnectionState(R.string.connected);
             invalidateOptionsMenu();
+
         } else if (BluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTING) {
             // Do wait
         } else {
@@ -220,10 +228,51 @@ public class DeviceControlActivity extends Activity {
         }
     };
 
+    private void initButtons()
+    {
+
+
+
+        if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_HEADSET,false) == true)
+        {
+            mButtonHeadset.setSelected(true);
+            sendBroadcast(new Intent(USING_HEADSET));
+        }
+        else
+        {
+            mButtonHeadset.setSelected(false);
+            sendBroadcast(new Intent(NOT_USING_HEADSET));
+        }
+
+        if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_VOLUME_BUTTONS,false) == true)
+        {
+            mButtonVolumeButtons.setSelected(true);
+            sendBroadcast(new Intent(USING_VOLUME_BUTTONS));
+        }
+        else
+        {
+            mButtonVolumeButtons.setSelected(false);
+            sendBroadcast(new Intent(NOT_USING_VOLUME_BUTTONS));
+        }
+
+        if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_VIBRATOR,false) == true)
+        {
+            mButtonVibrator.setSelected(true);
+            sendBroadcast(new Intent(USING_VIBRATOR));
+        }
+        else
+        {
+            mButtonVibrator.setSelected(false);
+            sendBroadcast(new Intent(NOT_USING_VIBRATOR));
+        }
+
+
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.remote_control);
 
         mButtonShutter = findViewById(R.id.btn_shutter);
@@ -233,9 +282,7 @@ public class DeviceControlActivity extends Activity {
         mButtonVibrator = findViewById(R.id.btn_vibrator);
 
 
-        mButtonHeadset.setSelected(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_HEADSET,false));
-        mButtonVolumeButtons.setSelected(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_VOLUME_BUTTONS,false));
-        mButtonVibrator.setSelected(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_VIBRATOR,false));
+
 
 
 
@@ -255,6 +302,8 @@ public class DeviceControlActivity extends Activity {
 
         callBluetoothService();
 
+
+
         //Log.d(TAG, "Activity created");
     }
 
@@ -263,6 +312,8 @@ public class DeviceControlActivity extends Activity {
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         gattServiceIntent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, mDeviceName);
         gattServiceIntent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, mDeviceAddress);
+
+
         bindService(gattServiceIntent, mServiceConnection, 0);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -289,18 +340,18 @@ public class DeviceControlActivity extends Activity {
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, makeUIUpdateIntentFilter());
 
-        if(mBluetoothLeService != null &&  mBluetoothLeService.ms !=null)
-        {
-            mBluetoothLeService.ms.setPlaybackState(new PlaybackStateCompat.Builder()
-                    .setState(PlaybackStateCompat.STATE_PLAYING, 0, 0) //you simulate a player which plays something.
-                    .build());
-        }
+        initButtons();
+//        if(mBluetoothLeService != null &&  mBluetoothLeService.ms !=null)
+//        {
+//            mBluetoothLeService.ms.setPlaybackState(new PlaybackStateCompat.Builder()
+//                    .setState(PlaybackStateCompat.STATE_PLAYING, 0, 0) //you simulate a player which plays something.
+//                    .build());
+//        }
 
 
         if(mBluetoothLeService == null && mWasConnected == true)
         {
             mBluetoothLeService = ((BluetoothLeService.LocalBinder) mIBinder).getService();
-            mBluetoothLeService.setMediaSession(mBluetoothLeService.getUsingHeadset(),mBluetoothLeService.getUsingVolumeButtons());
         }
         if (mBluetoothLeService != null && BluetoothLeService.mConnectionState == BluetoothLeService.STATE_DISCONNECTED) {
             final boolean result = mBluetoothLeService.connect(mDeviceAddress);
@@ -387,15 +438,19 @@ public class DeviceControlActivity extends Activity {
                 mConnectionState.setText(resourceId);
                 if (resourceId == R.string.connected) {
 
+
                     mConnectionState.setTextColor(Color.parseColor("#087f23"));
                     mButtonShutter.setEnabled(true);
                     mBluetoothLeService.ms.setActive(true);
-                    ring();
+
+
                     mBluetoothLeService.vibrate(200,3);
+
+
                 }
                 else if (resourceId == R.string.disconnected)
                 {
-                    ring();
+                   ring();
                 }
 
                 if (resourceId != R.string.connected)
@@ -443,60 +498,60 @@ public class DeviceControlActivity extends Activity {
     }
 
     public void volumeButtonsClick(View v) {
-        SharedPreferences.Editor editor = MainActivity.persistency.edit();
+
         if(mButtonVolumeButtons.isSelected()) {
-            mBluetoothLeService.ms.setPlaybackState(new PlaybackStateCompat.Builder()
+            /*mBluetoothLeService.ms.setPlaybackState(new PlaybackStateCompat.Builder()
                     .setState(PlaybackStateCompat.STATE_STOPPED, 0, 0) //you simulate a player which plays something.
-                    .build());
+                    .build());*/
             mButtonVolumeButtons.setSelected(false);
-            mBluetoothLeService.setUsingVolumeButtons(false);
-            editor.putBoolean(MainActivity.PERSISTENCY_USING_VOLUME_BUTTONS,false);
+           //mBluetoothLeService.setUsingVolumeButtons(false);
+
+            sendBroadcast(new Intent(NOT_USING_VOLUME_BUTTONS));
         }
         else
         {
-            mBluetoothLeService.ms.setPlaybackState(new PlaybackStateCompat.Builder()
+            /*mBluetoothLeService.ms.setPlaybackState(new PlaybackStateCompat.Builder()
                     .setState(PlaybackStateCompat.STATE_PLAYING, 0, 0) //you simulate a player which plays something.
-                    .build());
+                    .build());*/
             mButtonVolumeButtons.setSelected(true);
-            mBluetoothLeService.setUsingVolumeButtons(true);
-            editor.putBoolean(MainActivity.PERSISTENCY_USING_VOLUME_BUTTONS,true);
+            //mBluetoothLeService.setUsingVolumeButtons(true);
+            //editor.putBoolean(MainActivity.PERSISTENCY_USING_VOLUME_BUTTONS,true);
+            sendBroadcast(new Intent(USING_VOLUME_BUTTONS));
         }
-        editor.commit();
+
     }
 
     public void vibrateClick(View v) {
         SharedPreferences.Editor editor = MainActivity.persistency.edit();
         if(mButtonVibrator.isSelected()) {
             mButtonVibrator.setSelected(false);
-            mBluetoothLeService.setUsingVibrator(false);
             editor.putBoolean(MainActivity.PERSISTENCY_USING_VIBRATOR,false);
+            sendBroadcast(new Intent(NOT_USING_VIBRATOR));
         }
         else
         {
             mButtonVibrator.setSelected(true);
-            mBluetoothLeService.setUsingVibrator(true);
             editor.putBoolean(MainActivity.PERSISTENCY_USING_VIBRATOR,true);
+            sendBroadcast(new Intent(USING_VIBRATOR));
         }
         editor.commit();
     }
 
     public void headsetClick(View v) {
-        SharedPreferences.Editor editor = MainActivity.persistency.edit();
+//        SharedPreferences.Editor editor = MainActivity.persistency.edit();
         if(mButtonHeadset.isSelected()) {
-            mBluetoothLeService.ms.setMediaButtonReceiver(mBluetoothLeService.disconnectPendingIntent);
             mButtonHeadset.setSelected(false);
-            mBluetoothLeService.setUsingHeadset(false);
-            editor.putBoolean(MainActivity.PERSISTENCY_USING_HEADSET,false);
+//            editor.putBoolean(MainActivity.PERSISTENCY_USING_HEADSET,false);
+            sendBroadcast(new Intent(NOT_USING_HEADSET));
 
         }
         else
         {
-            mBluetoothLeService.ms.setMediaButtonReceiver(null);
             mButtonHeadset.setSelected(true);
-            mBluetoothLeService.setUsingHeadset(true);
-            editor.putBoolean(MainActivity.PERSISTENCY_USING_HEADSET,true);
+//            editor.putBoolean(MainActivity.PERSISTENCY_USING_HEADSET,true);
+            sendBroadcast(new Intent(USING_HEADSET));
         }
-        editor.commit();
+//        editor.commit();
     }
 
     private void setConfigDisplay() {
