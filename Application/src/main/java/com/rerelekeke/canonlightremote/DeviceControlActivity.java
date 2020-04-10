@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.content.res.ResourcesCompat;
@@ -137,10 +138,10 @@ public class DeviceControlActivity extends Activity {
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             if (GlobalConstants.ACTION_GATT_CONNECTED.equals(action)) {
-
                 mConnected = true;
-                updateConnectionState(R.string.connected);
                 invalidateOptionsMenu();
+            } else if (GlobalConstants.ACTION_GATT_CONNECTED_AND_PAIRED.equals(action)){
+                updateConnectionState(R.string.connected);
             } else if (GlobalConstants.ACTION_GATT_DISCONNECTED.equals(action)) {
                 mConnected = false;
                 updateConnectionState(R.string.disconnected);

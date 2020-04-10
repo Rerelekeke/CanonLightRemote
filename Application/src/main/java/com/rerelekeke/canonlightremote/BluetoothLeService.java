@@ -47,6 +47,7 @@ import java.util.UUID;
 import static android.os.SystemClock.sleep;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_DATA_AVAILABLE;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_CONNECTED;
+import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_CONNECTED_AND_PAIRED;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_DISCONNECTED;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_IS_PAIRED;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART;
@@ -123,7 +124,8 @@ public class BluetoothLeService extends Service {
             String intentAction;
             if (newState == BluetoothProfile.STATE_CONNECTED ) {
 
-
+                intentAction = ACTION_GATT_CONNECTED;
+                broadcastUpdate(intentAction);
 
                 // Attempts to discover services after successful connection.
                 //Log.i(TAG, "Attempting to start service discovery:");
@@ -472,7 +474,7 @@ public class BluetoothLeService extends Service {
 
 
 
-                broadcastUpdate(ACTION_GATT_CONNECTED);
+                broadcastUpdate(ACTION_GATT_CONNECTED_AND_PAIRED);
 
 
 
