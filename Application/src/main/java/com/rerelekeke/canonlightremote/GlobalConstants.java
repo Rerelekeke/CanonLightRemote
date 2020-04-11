@@ -6,6 +6,7 @@ public class GlobalConstants {
     public final static String ACTION_MSG_DELAY = "com.rerelekeke.canonlightremote.ACTION_MSG_DELAY";
     public final static String ACTION_MSG_SHUTTER_BUTTON_CLICK = "com.rerelekeke.canonlightremote.ACTION_MSG_SHUTTER_BUTTON_CLICK";
     public final static String ACTION_GATT_CONNECTED = "com.rerelekeke.canonlightremote.bluetooth.le.ACTION_GATT_CONNECTED";
+    public final static String ACTION_GATT_CONNECTED_AND_PAIRED = "com.rerelekeke.canonlightremote.bluetooth.le.ACTION_GATT_CONNECTED_AND_PAIRED";
     public final static String ACTION_GATT_DISCONNECTED = "com.rerelekeke.canonlightremote.bluetooth.le.ACTION_GATT_DISCONNECTED";
     public final static String ACTION_GATT_SERVICES_DISCOVERED = "com.rerelekeke.canonlightremote.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED";
     public final static String ACTION_DATA_AVAILABLE = "com.rerelekeke.canonlightremote.bluetooth.le.ACTION_DATA_AVAILABLE";

@@ -20,14 +20,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.pm.ComponentInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.AudioFocusRequest;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.media.RemoteControlClient;
 import android.media.session.MediaSession;
 import android.os.Binder;
 import android.os.Build;
@@ -50,6 +47,7 @@ import java.util.UUID;
 import static android.os.SystemClock.sleep;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_DATA_AVAILABLE;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_CONNECTED;
+import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_CONNECTED_AND_PAIRED;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_DISCONNECTED;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_IS_PAIRED;
 import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART;
@@ -108,29 +106,15 @@ public class BluetoothLeService extends Service {
     public PowerManager.WakeLock wakeLock;
     public  MediaSessionCompat ms;
     private boolean mUsingHeadset = false;
-    private boolean mUsingVolumeButtons = false;
-    private boolean mIsStarted = false;
-    private VolumeProviderCompat myVolumeProvider;
+    private boolean mUsingVibrator = false;
+    public VolumeProviderCompat myVolumeProvider = null;
     private boolean mFullPairing = false;
-    private boolean mFirstPartPairingProcessDone = false;
+    public PendingIntent mbrIntent;
+    public PendingIntent disconnectPendingIntent;
 
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
-    public void  vibrate(int vibrationDuration, int vibrationLoop) {
-        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        // Vibrate for vibrationDuration milliseconds
-        for(int i = 1;i<=vibrationLoop;i++)
-        {
-            if(i>1) sleep(vibrationDuration);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                v.vibrate(VibrationEffect.createOneShot(vibrationDuration,1));
-            } else {
-                //deprecated in API 26
-                v.vibrate(vibrationDuration);
-            }
-        }
 
-    }
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
@@ -138,15 +122,10 @@ public class BluetoothLeService extends Service {
 
             //Log.i(TAG, "Connection state changed");
             String intentAction;
-            if (newState == BluetoothProfile.STATE_CONNECTED /*&& mFirstPartPairingProcessDone*/) {
+            if (newState == BluetoothProfile.STATE_CONNECTED ) {
 
-//                if(mFirstPartPairingProcessDone) {
-//                    intentAction = ACTION_GATT_CONNECTED;
-//                    mConnectionState = STATE_CONNECTED;
-//                    broadcastUpdate(intentAction);
-//                }
-                //Log.i(TAG, "Connected to GATT server.");
-
+                intentAction = ACTION_GATT_CONNECTED;
+                broadcastUpdate(intentAction);
 
                 // Attempts to discover services after successful connection.
                 //Log.i(TAG, "Attempting to start service discovery:");
@@ -164,11 +143,10 @@ public class BluetoothLeService extends Service {
                 stopForegroundService();
                 stopSelf();
 
-//                if (isControlActivityVisible == false) {
-//
-//                }
+
             }
         }
+
 
 
         @Override
@@ -368,7 +346,6 @@ public class BluetoothLeService extends Service {
                 //mConnectionState = STATE_CONNECTING;
                 sleep(1000);
                 pairAndConnectByStep(1);
-                mFirstPartPairingProcessDone = true;
                 sleep(1000);
                 pairAndConnectByStep(2);
                 sleep(1000);
@@ -494,10 +471,10 @@ public class BluetoothLeService extends Service {
                 mWriteCharacteristic.setValue(controlChar);
 
                 if (!mBluetoothGatt.writeCharacteristic(mWriteCharacteristic)) return false;
-                MainActivity.sharedpreferences = getSharedPreferences(mBluetoothDeviceAddress, Context.MODE_PRIVATE);
 
 
-                broadcastUpdate(ACTION_GATT_CONNECTED);
+
+                broadcastUpdate(ACTION_GATT_CONNECTED_AND_PAIRED);
 
 
 
@@ -554,7 +531,7 @@ public class BluetoothLeService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        setMediaSession(true,true);
+
         //Log.i(TAG, "Service created");
         createNotificationChannel();
 
@@ -562,7 +539,15 @@ public class BluetoothLeService extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_DISCONNECT);
         filter.addAction(ACTION_DISCONNECT_AND_STOP_FOREGROUND);
+        filter.addAction(DeviceControlActivity.USING_VIBRATOR);
+        filter.addAction(DeviceControlActivity.NOT_USING_VIBRATOR);
+        filter.addAction(DeviceControlActivity.USING_HEADSET);
+        filter.addAction(DeviceControlActivity.NOT_USING_HEADSET);
+        filter.addAction(DeviceControlActivity.USING_VOLUME_BUTTONS);
+        filter.addAction(DeviceControlActivity.NOT_USING_VOLUME_BUTTONS);
         registerReceiver(receiver, filter);
+
+        setMediaSession();
 
         IntentFilter repeatFilter = new IntentFilter(ACTION_REPEAT);
         repeatFilter.addAction(ACTION_STOP_SELF);
@@ -572,6 +557,11 @@ public class BluetoothLeService extends Service {
         powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
                 TAG + "::CLRWakelockTag");
+
+        Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+        mediaButtonIntent.setClass(this, MediaButtonReceiver.class);
+         mbrIntent =
+                PendingIntent.getBroadcast(this, 0, mediaButtonIntent, 0);//PendingIntent.FLAG_UPDATE_CURRENT);
 
 
     }
@@ -759,8 +749,8 @@ public class BluetoothLeService extends Service {
                     return;
                 }
 
-                SharedPreferences.Editor editor = MainActivity.sharedpreferences.edit();
-                editor.putString("deviceaddress", mBluetoothDeviceAddress);
+                SharedPreferences.Editor editor = MainActivity.persistency.edit();
+                editor.putString(MainActivity.PERSISTENCY_DEVICE_ADDRESS, mBluetoothDeviceAddress);
                 editor.commit();
 
                 sigLockShutter = false;
@@ -791,6 +781,34 @@ public class BluetoothLeService extends Service {
             if (action.equals(ACTION_STOP_SELF)) {
                 stopSelf();
             }
+
+            if (action.equals(DeviceControlActivity.USING_VIBRATOR)) {
+                updateVibratorUsage(true);
+            }
+
+            if (action.equals(DeviceControlActivity.NOT_USING_VIBRATOR)) {
+                updateVibratorUsage(false);
+            }
+
+
+            if (action.equals(DeviceControlActivity.USING_VOLUME_BUTTONS)) {
+                updateVolumeButtonUsage(true);
+            }
+
+            if (action.equals(DeviceControlActivity.NOT_USING_VOLUME_BUTTONS)) {
+                updateVolumeButtonUsage(false);
+            }
+
+
+            if (action.equals(DeviceControlActivity.USING_HEADSET)) {
+                updateHeadsetUsage(true);
+            }
+
+            if (action.equals(DeviceControlActivity.NOT_USING_HEADSET)) {
+                updateHeadsetUsage(false);
+            }
+
+
 
         }
     };
@@ -875,101 +893,156 @@ public class BluetoothLeService extends Service {
         Intent intentProgress = new Intent(ACTION_STOP_SELF);
         LocalBroadcastManager.getInstance(mContext).sendBroadcast(intentProgress);
     }
-
-
-    public void setMediaSession(boolean usingHeadset, boolean usingVolumeButtons) {
-        mUsingHeadset = usingHeadset;
-        mUsingVolumeButtons = usingVolumeButtons;
-
-
-
-        if(!usingHeadset && !usingVolumeButtons)
+    public void  vibrate(int vibrationDuration, int vibrationLoop) {
+        if (mUsingVibrator)
         {
-            ms.setActive(false);
-            ms.release();
-            return;
+            Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            // Vibrate for vibrationDuration milliseconds
+            for(int i = 1;i<=vibrationLoop;i++)
+            {
+                if(i>1) sleep(vibrationDuration);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    v.vibrate(VibrationEffect.createOneShot(vibrationDuration,1));
+                } else {
+                    //deprecated in API 26
+                    v.vibrate(vibrationDuration);
+                }
+            }
         }
+    }
 
 
-        if(mIsStarted)
+
+    public void updateVibratorUsage(boolean usingStatus)
+    {
+        mUsingVibrator = usingStatus;
+
+        SharedPreferences.Editor editor = MainActivity.persistency.edit();
+        editor.putBoolean(MainActivity.PERSISTENCY_USING_VIBRATOR,usingStatus);
+        editor.commit();
+
+    }
+
+    public void updateVolumeButtonUsage(boolean usingStatus)
+    {
+
+        SharedPreferences.Editor editor = MainActivity.persistency.edit();
+        editor.putBoolean(MainActivity.PERSISTENCY_USING_VOLUME_BUTTONS,usingStatus);
+        editor.commit();
+
+        if(ms!=null)
         {
-            ms.setActive(true);
-
-            return;
+            if (usingStatus) {
+                ms.setPlaybackState(new PlaybackStateCompat.Builder()
+                        .setState(PlaybackStateCompat.STATE_PLAYING, 0, 0) //you simulate a player which plays something.
+                        .build());
+                ms.setActive(true);
+            }
+            else
+            {
+                ms.setPlaybackState(new PlaybackStateCompat.Builder()
+                        .setState(PlaybackStateCompat.STATE_STOPPED, 0, 0) //you simulate a player which plays something.
+                        .build());
+            }
         }
+    }
 
-        Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
-        mediaButtonIntent.setClass(this, MediaButtonReceiver.class);
-        PendingIntent mbrIntent =
-                PendingIntent.getBroadcast(this, 0, mediaButtonIntent, 0);//PendingIntent.FLAG_UPDATE_CURRENT);
+
+    public void updateHeadsetUsage(boolean usingStatus)
+    {
+        mUsingHeadset = usingStatus;
+
+        SharedPreferences.Editor editor = MainActivity.persistency.edit();
+        editor.putBoolean(MainActivity.PERSISTENCY_USING_HEADSET,usingStatus);
+        editor.commit();
+
+        if(ms!=null)
+        {
+            if (usingStatus) {
+                ms.setMediaButtonReceiver(disconnectPendingIntent);
+            }
+            else
+            {
+                ms.setMediaButtonReceiver(null);
+            }
+        }
+    }
+
+    public void setMediaSession() {
+
+
+
 
 
         ms = new MediaSessionCompat(getApplicationContext(), getPackageName());
-        ms.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        //ms.setActive(true);
+        ms.setFlags(MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
 
 
-        if(usingVolumeButtons) {
-            ms.setPlaybackState(new PlaybackStateCompat.Builder()
-                    .setState(PlaybackStateCompat.STATE_PLAYING, 0, 0) //you simulate a player which plays something.
-                    .build());
 
-             myVolumeProvider =
-                    new VolumeProviderCompat(VolumeProviderCompat.VOLUME_CONTROL_RELATIVE, /*max volume*/100, /*initial volume level*/50) {
-                        @Override
-                        public void onAdjustVolume(int direction) {
-                                if (direction == 1) {
-                                    this.setCurrentVolume(this.getCurrentVolume() - 1);
-                                    currentMode = GlobalConstants.CLRModes.ONE;
-                                    clickShutter();
-                                }
-                                if (direction == -1) {
-                                    this.setCurrentVolume(this.getCurrentVolume() + 1);
-                                    currentMode = GlobalConstants.CLRModes.ONE;
-                                    clickShutter();
-                                }
 
+
+
+
+        myVolumeProvider =
+                new VolumeProviderCompat(VolumeProviderCompat.VOLUME_CONTROL_RELATIVE, /*max volume*/100, /*initial volume level*/50) {
+                    @Override
+                    public void onAdjustVolume(int direction) {
+                        if (direction == 1) {
+                                this.setCurrentVolume(this.getCurrentVolume() - 1);
+                                currentMode = GlobalConstants.CLRModes.ONE;
+                                clickShutter();
                         }
-                    };
+                        if (direction == -1) {
+                                this.setCurrentVolume(this.getCurrentVolume() + 1);
+                                currentMode = GlobalConstants.CLRModes.ONE;
+                                clickShutter();
+                        }
 
-            ms.setPlaybackToRemote(myVolumeProvider);
+                    }
+                };
+
+        ms.setPlaybackToRemote(myVolumeProvider);
 
 
-        }
+
 
         //TODO headset not working when media player is in background, have to be solved
 
-        if(mUsingHeadset)
-        {
-            ms.setCallback(new MediaSessionCompat.Callback() {
-                @Override
-                public boolean onMediaButtonEvent(Intent mediaButtonIntent) {
+        Intent disconnectIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+        disconnectPendingIntent =
+                PendingIntent.getBroadcast(this, 4, disconnectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-                    final KeyEvent event = mediaButtonIntent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-                    if (event != null && event.getAction() == KeyEvent.ACTION_DOWN) {
 
-                            switch (event.getKeyCode()) {
-                                case KeyEvent.KEYCODE_HEADSETHOOK:
-                                    clickShutter();
-                                    break;
+
+
+        ms.setCallback(new MediaSessionCompat.Callback() {
+            @Override
+            public boolean onMediaButtonEvent(Intent mediaButtonIntent) {
+
+                final KeyEvent event = mediaButtonIntent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+                if (event != null && event.getAction() == KeyEvent.ACTION_DOWN) {
+                    switch (event.getKeyCode()) {
+                        case KeyEvent.KEYCODE_HEADSETHOOK:
+                            if(mUsingHeadset)
+                            {
+                                clickShutter();
                             }
-                        }
-
-
-                    return super.onMediaButtonEvent(mediaButtonIntent);
+                            break;
+                    }
                 }
+                return super.onMediaButtonEvent(mediaButtonIntent);
+            }
 
-            });
+        });
 
-            ms.setMediaButtonReceiver(mbrIntent);
-            AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
-                    AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT), AudioTrack.MODE_STREAM);
-            audioTrack.play();
-            audioTrack.stop();
-            audioTrack.release();
-        }
-        ms.setMediaButtonReceiver(mbrIntent);
-		mIsStarted = true;
+        //TODO check if follocing part really needed
+        AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
+                AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT), AudioTrack.MODE_STREAM);
+        audioTrack.play();
+        audioTrack.stop();
+        audioTrack.release();
+
+        ms.setActive(true);
 
     }
 
