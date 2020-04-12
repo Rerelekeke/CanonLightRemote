@@ -650,7 +650,7 @@ public class BluetoothLeService extends Service {
         builder.setSmallIcon(R.drawable.ic_launcher);
         Bitmap largeIconBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         builder.setLargeIcon(largeIconBitmap);
-        builder.setSmallIcon(R.drawable.ic_launcher);
+        //builder.setSmallIcon(R.drawable.ic_launcher);
         builder.setContentTitle("CLR");
         builder.setContentText("Connected");
         // Make the notification max priority.

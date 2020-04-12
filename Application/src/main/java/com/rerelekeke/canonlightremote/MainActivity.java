@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setDisplayUseLogoEnabled(true);
         getSupportActionBar().setLogo(R.drawable.ic_launcher);
-        getSupportActionBar().setTitle("Canon Light Remote");
+        getSupportActionBar().setTitle("Camera Bt Remote");
 
         persistency = getSharedPreferences(PERSISTENCY_DEVICE_ADDRESS, Context.MODE_PRIVATE);
         persistency = getSharedPreferences(PERSISTENCY_USING_HEADSET, Context.MODE_PRIVATE);
@@ -439,11 +439,6 @@ public class MainActivity extends AppCompatActivity {
             });
             dialog.show();
         }
-    }
-
-    public void showHelp(View v){
-        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/rereleke/canonlightremote/blob/master/README.md#supported-canon-cameras"));
-        startActivity(browserIntent);
     }
 
     private BroadcastReceiver broadcastReceiver=new BroadcastReceiver() {

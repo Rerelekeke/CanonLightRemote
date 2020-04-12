@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="ble_not_supported">Bluetooth LE is not supported</string>
-    <string name="label_help">Help</string>
     <string name="label_data">Data:</string>
     <string name="label_device_address">Device address:</string>
     <string name="label_state">State:</string>
@@ -31,8 +30,6 @@
     <string name="bluetooth_disconnect_message">Disconnect and stop tasks?</string>
     <string name="bluetooth_disconnect_ok">Disconnect</string>
 
-    <string name="label_delay">Delay</string>
-    <string name="label_interval">Interval</string>
     <string name="label_shutter">Shutter</string>
     <string name="label_indev">In Development</string>
 

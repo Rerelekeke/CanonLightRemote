@@ -28,7 +28,7 @@
             android:layout_weight="1"
             android:gravity="end"
             android:text="@string/disconnected"
-            android:textColor="#eb403c"
+            android:textColor="#b5362f"
             android:textSize="18sp" />
     </LinearLayout>
 
