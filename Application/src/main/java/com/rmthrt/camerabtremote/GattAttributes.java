@@ -1,4 +1,4 @@
-package com.rerelekeke.canonlightremote;
+package com.rmthrt.camerabtremote;
 
 import java.util.HashMap;
 

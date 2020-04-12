@@ -1,4 +1,4 @@
-package com.rerelekeke.canonlightremote;
+package com.rmthrt.camerabtremote;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -45,16 +45,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static android.os.SystemClock.sleep;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_DATA_AVAILABLE;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_CONNECTED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_CONNECTED_AND_PAIRED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_DISCONNECTED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_IS_PAIRED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.EXTRA_DATA;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_DATA_AVAILABLE;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_CONNECTED;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_CONNECTED_AND_PAIRED;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_DISCONNECTED;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_IS_PAIRED;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED;
+import static com.rmthrt.camerabtremote.GlobalConstants.EXTRA_DATA;
 
 /**
  * Service for managing connection and data communication with a GATT server hosted on a
@@ -286,12 +286,8 @@ public class BluetoothLeService extends Service {
         }
 
         mBluetoothAdapter = mBluetoothManager.getAdapter();
-        if (mBluetoothAdapter == null) {
-            //Log.e(TAG, "Unable to obtain a BluetoothAdapter.");
-            return false;
-        }
-
-        return true;
+        //Log.e(TAG, "Unable to obtain a BluetoothAdapter.");
+        return mBluetoothAdapter != null;
     }
 
     /**
@@ -654,7 +650,7 @@ public class BluetoothLeService extends Service {
         builder.setSmallIcon(R.drawable.ic_launcher);
         Bitmap largeIconBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         builder.setLargeIcon(largeIconBitmap);
-        builder.setSmallIcon(R.drawable.ic_stat_logo2);
+        //builder.setSmallIcon(R.drawable.ic_launcher);
         builder.setContentTitle("CLR");
         builder.setContentText("Connected");
         // Make the notification max priority.
@@ -850,7 +846,7 @@ public class BluetoothLeService extends Service {
                     //TODO check if needed to wake some times
                     Intent intent = new Intent(GlobalConstants.ACTION_MSG_DELAY);
                     intent.putExtra("message",
-                            Long.toString(timeElapsed / 1000) + "/" + Long.toString(delayValue) + "s");
+                            timeElapsed / 1000 + "/" + Long.toString(delayValue) + "s");
 
                     LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
 

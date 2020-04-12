@@ -1,4 +1,4 @@
-package com.rerelekeke.canonlightremote;
+package com.rmthrt.camerabtremote;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -401,7 +401,7 @@ public class DeviceControlActivity extends Activity {
 
                 if (resourceId != R.string.connected)
                 {
-                    mConnectionState.setTextColor(Color.parseColor("#eb403c"));
+                    mConnectionState.setTextColor(Color.parseColor("#b5362f"));
                     mButtonShutter.setEnabled(false);
                     if(mBluetoothLeService!=null)
                     {

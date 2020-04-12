@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.rerelekeke.canonlightremote"
+    package="com.rmthrt.camerabtremote"
     android:versionCode="1"
     android:versionName="1.0">
 
@@ -35,15 +35,15 @@
 
 
         <service
-            android:name="com.rerelekeke.canonlightremote.BluetoothLeService"
+            android:name="com.rmthrt.camerabtremote.BluetoothLeService"
             android:enabled="true"
             android:stopWithTask="false" />
 
 
         <activity
-            android:name="com.rerelekeke.canonlightremote.DeviceControlActivity"
+            android:name="com.rmthrt.camerabtremote.DeviceControlActivity"
             android:screenOrientation="portrait" />
-        <activity android:name="com.rerelekeke.canonlightremote.MainActivity"
+        <activity android:name="com.rmthrt.camerabtremote.MainActivity"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.Light">
 
