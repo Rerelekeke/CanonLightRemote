@@ -25,7 +25,7 @@
             <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle" >
                 <stroke android:width="40dp" android:color="#00ff0000" />
                 <corners android:radius="50dp" />
-                <solid android:color="#44515d"/>
+                <solid android:color="#b5362f"/>
             </shape>
         </item>
 
@@ -41,7 +41,7 @@
             <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
                 <stroke android:width="40dp" android:color="#00ff0000" />
                 <corners android:radius="50dp" />
-                <solid android:color="#44515d"/>
+                <solid android:color="#b5362f"/>
             </shape>
         </item>
 

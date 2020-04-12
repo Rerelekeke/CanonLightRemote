@@ -286,12 +286,8 @@ public class BluetoothLeService extends Service {
         }
 
         mBluetoothAdapter = mBluetoothManager.getAdapter();
-        if (mBluetoothAdapter == null) {
-            //Log.e(TAG, "Unable to obtain a BluetoothAdapter.");
-            return false;
-        }
-
-        return true;
+        //Log.e(TAG, "Unable to obtain a BluetoothAdapter.");
+        return mBluetoothAdapter != null;
     }
 
     /**
@@ -654,7 +650,7 @@ public class BluetoothLeService extends Service {
         builder.setSmallIcon(R.drawable.ic_launcher);
         Bitmap largeIconBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
         builder.setLargeIcon(largeIconBitmap);
-        builder.setSmallIcon(R.drawable.ic_stat_logo2);
+        builder.setSmallIcon(R.drawable.ic_launcher);
         builder.setContentTitle("CLR");
         builder.setContentText("Connected");
         // Make the notification max priority.
@@ -850,7 +846,7 @@ public class BluetoothLeService extends Service {
                     //TODO check if needed to wake some times
                     Intent intent = new Intent(GlobalConstants.ACTION_MSG_DELAY);
                     intent.putExtra("message",
-                            Long.toString(timeElapsed / 1000) + "/" + Long.toString(delayValue) + "s");
+                            timeElapsed / 1000 + "/" + Long.toString(delayValue) + "s");
 
                     LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
 
