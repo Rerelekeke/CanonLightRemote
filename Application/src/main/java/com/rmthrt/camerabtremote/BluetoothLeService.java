@@ -1,4 +1,4 @@
-package com.rerelekeke.canonlightremote;
+package com.rmthrt.camerabtremote;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -45,16 +45,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static android.os.SystemClock.sleep;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_DATA_AVAILABLE;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_CONNECTED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_CONNECTED_AND_PAIRED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_DISCONNECTED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_IS_PAIRED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART;
-import static com.rerelekeke.canonlightremote.GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED;
-import static com.rerelekeke.canonlightremote.GlobalConstants.EXTRA_DATA;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_DATA_AVAILABLE;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_CONNECTED;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_CONNECTED_AND_PAIRED;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_DISCONNECTED;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_IS_PAIRED;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED;
+import static com.rmthrt.camerabtremote.GlobalConstants.EXTRA_DATA;
 
 /**
  * Service for managing connection and data communication with a GATT server hosted on a
