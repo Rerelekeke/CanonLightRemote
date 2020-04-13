@@ -39,7 +39,9 @@
             android:enabled="true"
             android:stopWithTask="false" />
 
-
+        <activity
+        android:name="com.rmthrt.camerabtremote.SettingsActivity"
+        android:screenOrientation="portrait" />
         <activity
             android:name="com.rmthrt.camerabtremote.DeviceControlActivity"
             android:screenOrientation="portrait" />

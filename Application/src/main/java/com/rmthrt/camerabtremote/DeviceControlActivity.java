@@ -438,7 +438,15 @@ public class DeviceControlActivity extends Activity {
         return intentFilter;
     }
 
-    // Method called when shutter button is clicked
+    // Methods called when shutter button is clicked
+
+    public void settingsClick(View v) {
+        final Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+        startActivity(intent);
+
+    }
+
+
     public void shutterClick(View v) {
         mBluetoothLeService.clickShutter();
     }

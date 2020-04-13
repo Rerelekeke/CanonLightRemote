@@ -137,6 +137,12 @@ public class MainActivity extends AppCompatActivity {
             finish();
             return;
         }
+
+        if(persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null)=="")
+        {
+            final Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+            startActivity(intent);
+        }
     }
 
 

@@ -869,8 +869,9 @@ public class BluetoothLeService extends Service {
 
                     Intent intentS = new Intent(GlobalConstants.ACTION_MSG_SHUTTER_BUTTON_CLICK);
                     LocalBroadcastManager.getInstance(mContext).sendBroadcast(intentS);
-                    doShutter(5, repeat,false,0);
+                    doShutter(1, repeat,false,0);
                     timeElapsed = 0;
+                    //doShutter(5, repeat,false,0);
 
                 }
             }
