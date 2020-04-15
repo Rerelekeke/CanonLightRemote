@@ -106,7 +106,7 @@ public class BluetoothLeService extends Service {
     public PowerManager.WakeLock wakeLock;
     public  MediaSessionCompat ms;
     private boolean mUsingHeadset = false;
-    private boolean mUsingVibrator = false;
+    public boolean mUsingVibrator = false;
     public VolumeProviderCompat myVolumeProvider = null;
     private boolean mFullPairing = false;
     public PendingIntent mbrIntent;
@@ -745,9 +745,7 @@ public class BluetoothLeService extends Service {
                     return;
                 }
 
-                SharedPreferences.Editor editor = MainActivity.persistency.edit();
-                editor.putString(MainActivity.PERSISTENCY_DEVICE_ADDRESS, mBluetoothDeviceAddress);
-                editor.commit();
+
 
                 sigLockShutter = false;
             }

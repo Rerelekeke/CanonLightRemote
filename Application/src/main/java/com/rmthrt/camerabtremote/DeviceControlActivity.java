@@ -71,7 +71,7 @@ public class DeviceControlActivity extends Activity {
     private IBinder mIBinder;
 
     private TextView mConnectionState;
-    private String mDeviceName;
+    static private String mDeviceName;
     private String mDeviceAddress;
     private BluetoothLeService mBluetoothLeService;
     private boolean mConnected = false;
@@ -174,6 +174,10 @@ public class DeviceControlActivity extends Activity {
     };
 
 
+    static public String getDeviceName()
+    {
+        return mDeviceName;
+    }
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -246,6 +250,7 @@ public class DeviceControlActivity extends Activity {
 
         setContentView(R.layout.remote_control);
 
+
         mButtonShutter = findViewById(R.id.btn_shutter);
 
         mButtonHeadset = findViewById(R.id.btn_headset);
@@ -267,6 +272,10 @@ public class DeviceControlActivity extends Activity {
         getActionBar().setDisplayHomeAsUpEnabled(true);
 
         callBluetoothService();
+
+        SharedPreferences.Editor editor = MainActivity.persistency.edit();
+        editor.putString(MainActivity.PERSISTENCY_DEVICE_ADDRESS, mDeviceAddress);
+        editor.commit();
 
         //Log.d(TAG, "Activity created");
     }
@@ -312,7 +321,9 @@ public class DeviceControlActivity extends Activity {
         BluetoothLeService.isControlActivityVisible = true;
 
         if (BluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTED) {
+            mBluetoothLeService.mUsingVibrator = false;
             updateConnectionState(R.string.connected);
+            mBluetoothLeService.mUsingVibrator = true;
 
         } else if (BluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTING) {
             updateConnectionState(R.string.connecting);

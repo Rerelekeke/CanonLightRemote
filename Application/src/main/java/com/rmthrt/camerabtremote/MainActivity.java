@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
     public static String PERSISTENCY_USING_HEADSET = "usingheadset";
     public static String PERSISTENCY_USING_VOLUME_BUTTONS = "usingvolumebuttons";
     public static String PERSISTENCY_USING_VIBRATOR = "usingvvibrator";
+    public static String PERSISTENCY_AUTO_CONNECT = "autoconnect";
 
 
     private void IntentDeviceConnection(BluetoothDevice device)
@@ -104,6 +105,8 @@ public class MainActivity extends AppCompatActivity {
         persistency = getSharedPreferences(PERSISTENCY_DEVICE_ADDRESS, Context.MODE_PRIVATE);
         persistency = getSharedPreferences(PERSISTENCY_USING_HEADSET, Context.MODE_PRIVATE);
         persistency = getSharedPreferences(PERSISTENCY_USING_VOLUME_BUTTONS, Context.MODE_PRIVATE);
+        //persistency = getSharedPreferences(PERSISTENCY_USING_VIBRATOR, Context.MODE_PRIVATE);
+        //persistency = getSharedPreferences(PERSISTENCY_AUTO_CONNECT, Context.MODE_PRIVATE);
 
 
 
@@ -284,12 +287,10 @@ public class MainActivity extends AppCompatActivity {
             if (!mLeDevices.contains(device)) {
                 mLeDevices.add(device);
 
-
                 String  alreadyPairedDevice = persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null);
 
-                if(device.getAddress().equals(alreadyPairedDevice)){
+                if(device.getAddress().equals(alreadyPairedDevice) &&  persistency.getBoolean(PERSISTENCY_AUTO_CONNECT,false)){
                     IntentDeviceConnection(device);
-
                 }
             }
         }
