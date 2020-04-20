@@ -75,6 +75,7 @@ public class BluetoothLeService extends Service {
 
     public final static int microDelay = 200;
     public final static int CAMERA_SLEEP_TIME = 118;
+    public final static int SIGNAL_ONE_SHUTTER = 140;
 
     public final static int SIGNAL_WAKE_IMMEDIATE = 12;
 
@@ -330,7 +331,45 @@ public class BluetoothLeService extends Service {
         mConnectionState = STATE_CONNECTING;
         return true;
     }
+    public void pairAndConnect() {
+        mBluetoothAdapter = mBluetoothManager.getAdapter();
+        if (mBluetoothAdapter == null) {
+            //Log.e(TAG, "Unable to obtain a BlumBluetoothGatt.discoverServices()etoothAdapter.");
+        }
+        if (mBluetoothAdapter == null || mBluetoothGatt == null) {
+            //Log.w(TAG, "BluetoothAdapter not initialized");
+            return;
+        }
+        /*check if the service is available on the device*/
+        BluetoothGattService mCustomService =
+                mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_BLUETOOTH_REMOTE_SERVICE));
+        if (mCustomService == null) {
+            //Log.w(TAG, "Custom BLE Service not found");
+            return;
+        }
+        //Log.d(TAG, "Pairing/Connecting");
+        /*get the read characteristic from the service*/
 
+        BluetoothGattCharacteristic mWriteCharacteristic =
+                mCustomService.getCharacteristic(UUID.fromString(GattAttributes.CANON_PAIRING_SERVICE));
+
+        byte[] controlChar = new byte[1];
+        controlChar[0] = new Integer(3).byteValue();
+
+        String s = "CB Remote";
+        byte[] name = s.getBytes(StandardCharsets.US_ASCII);
+
+        byte[] value = new byte[controlChar.length + name.length];
+        System.arraycopy(controlChar, 0, value, 0, controlChar.length);
+        System.arraycopy(name, 0, value, controlChar.length, name.length);
+
+        mWriteCharacteristic.setValue(value);
+        if (mBluetoothGatt.writeCharacteristic(mWriteCharacteristic) == false) {
+            //Log.e(TAG, "Failed to write characteristic");
+        }
+
+        broadcastUpdate(ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED);
+    }
     public void pairAndConnectFirstPart()
     {
         //mConnectionState = STATE_CONNECTING;
@@ -693,18 +732,39 @@ public class BluetoothLeService extends Service {
             return;
         }
         sigLockShutter = true;
-        final BluetoothGattService mCustomService =
-                mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_SHUTTER_CONTROL_SERVICE_PHONE_3));
-        if (mCustomService == null) {
-            //Log.w(TAG, "Custom BLE Service not found");
-            return;
+
+
+        final BluetoothGattService mCustomService;
+        final BluetoothGattCharacteristic mWriteCharacteristicShutter;
+        final byte[] controlChar = new byte[2];
+
+        if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,false)) {
+            mCustomService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_SHUTTER_CONTROL_SERVICE_PHONE_3));
+
+            if (mCustomService == null) {
+                //Log.w(TAG, "Custom BLE Service not found");
+                return;
+            }
+
+            //Log.d(TAG, "Firing a shot");
+            mWriteCharacteristicShutter =
+                    mCustomService.getCharacteristic(UUID.fromString(GattAttributes.CANON_SHUTTER_CONTROL_CHARACTERISTIC));
+
+            controlChar[1] = new Integer(1).byteValue();
+        }
+        else
+        {
+
+            mCustomService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_BLUETOOTH_REMOTE_SERVICE));
+            if (mCustomService == null) {
+                //Log.w(TAG, "Custom BLE Service not found");
+                return;
+            }
+
+            //Log.d(TAG, "Firing a shot");
+            mWriteCharacteristicShutter = mCustomService.getCharacteristic(UUID.fromString(GattAttributes.CANON_SHUTTER_CONTROL_SERVICE));
         }
 
-        //Log.d(TAG, "Firing a shot");
-        final BluetoothGattCharacteristic mWriteCharacteristicShutter =
-                mCustomService.getCharacteristic(UUID.fromString(GattAttributes.CANON_SHUTTER_CONTROL_CHARACTERISTIC));
-        final byte[] controlChar = new byte[2];
-        controlChar[1] = new Integer(1).byteValue();
         mWriteCharacteristicShutter.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
         mWriteCharacteristicShutter.setValue(controlChar);
         if (mBluetoothGatt.writeCharacteristic(mWriteCharacteristicShutter) == false) {
@@ -735,19 +795,53 @@ public class BluetoothLeService extends Service {
                 //Log.d(TAG, "trying write");
                 controlChar[1] = new Integer(2).byteValue();
                 mWriteCharacteristicShutter.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                mWriteCharacteristicShutter.setValue(controlChar);
-                if (mBluetoothGatt.writeCharacteristic(mWriteCharacteristicShutter) == false) {
-                    //Log.e(TAG, "Failed to write characteristic");
+                if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,false)) {
+                    mWriteCharacteristicShutter.setValue(controlChar);
                 }
-                if (mCustomService == null) {
-                    //Log.w(TAG, "Custom BLE Service not found");
+                else
+                {
+                    mWriteCharacteristicShutter.setValue(SIGNAL_ONE_SHUTTER,
+                            BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                }
+                if (mBluetoothGatt.writeCharacteristic(mWriteCharacteristicShutter) == true && !signal) {
+
+
+                    final Handler handler2 = new Handler();
+                    handler2.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mCustomService == null) {
+                                //Log.w(TAG, "Custom BLE Service not found");
+                                sigLockShutter = false;
+                                return;
+                            }
+
+                            mWriteCharacteristicShutter.setValue(SIGNAL_WAKE_IMMEDIATE,
+                                    BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+
+                            if (!mBluetoothGatt.writeCharacteristic(mWriteCharacteristicShutter)) {
+                                //Log.e(TAG, "Failed to write characteristic Shutter");
+                            }
+                            sigLockShutter = false;
+
+                        }
+                    }, microDelay);
+                } else {
+                    //Log.e(TAG, "Failed to write characteristic Shutter");
                     sigLockShutter = false;
-                    return;
                 }
-
-
-
-                sigLockShutter = false;
+//                if (mBluetoothGatt.writeCharacteristic(mWriteCharacteristicShutter) == false) {
+//                    //Log.e(TAG, "Failed to write characteristic");
+//                }
+//                if (mCustomService == null) {
+//                    //Log.w(TAG, "Custom BLE Service not found");
+//                    sigLockShutter = false;
+//                    return;
+//                }
+//
+//
+//
+//                sigLockShutter = false;
             }
         }, delayMilliSec);
 

@@ -148,7 +148,15 @@ public class DeviceControlActivity extends Activity {
                 invalidateOptionsMenu();
                 mBluetoothLeService.connect(mDeviceAddress);
             } else if (GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
-                mBluetoothLeService.CheckIfPaired();
+                if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,false))
+                {
+                    mBluetoothLeService.CheckIfPaired();
+                }
+                else
+                {
+                    mBluetoothLeService.pairAndConnect();
+                }
+
             }
             else if (GlobalConstants.ACTION_GATT_IS_PAIRED.equals(action)) {
                 mBluetoothLeService.pairAndConnectByStep(7);

@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
     public static String PERSISTENCY_USING_HEADSET = "usingheadset";
     public static String PERSISTENCY_USING_VOLUME_BUTTONS = "usingvolumebuttons";
     public static String PERSISTENCY_USING_VIBRATOR = "usingvvibrator";
+    public static String PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING = "usingphoneorbluetoothpairing";
 
 
     private void IntentDeviceConnection(BluetoothDevice device)
@@ -103,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
         persistency = getSharedPreferences(PERSISTENCY_DEVICE_ADDRESS, Context.MODE_PRIVATE);
         persistency = getSharedPreferences(PERSISTENCY_USING_HEADSET, Context.MODE_PRIVATE);
+        persistency = getSharedPreferences(PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,Context.MODE_PRIVATE);
         persistency = getSharedPreferences(PERSISTENCY_USING_VOLUME_BUTTONS, Context.MODE_PRIVATE);
 
 
@@ -141,6 +143,16 @@ public class MainActivity extends AppCompatActivity {
 
         if(persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null)=="")
         {
+            final Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+            startActivity(intent);
+        }
+
+        String  alreadyPairedDevice = persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null);
+        if(alreadyPairedDevice.equals("None"))
+        {
+            SharedPreferences.Editor editor = MainActivity.persistency.edit();
+            editor.putBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING, false);
+            editor.commit();
             final Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
             startActivity(intent);
         }
@@ -282,10 +294,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void addDevice(BluetoothDevice device) {
+            String  alreadyPairedDevice = persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null);
+
             if (!mLeDevices.contains(device)) {
                 mLeDevices.add(device);
-
-                String  alreadyPairedDevice = persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null);
 
                 if(device.getAddress().equals(alreadyPairedDevice) ){
                     IntentDeviceConnection(device);

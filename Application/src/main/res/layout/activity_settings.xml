@@ -24,6 +24,74 @@
 
 
     <LinearLayout
+        android:id="@+id/welcomeLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:orientation="vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginVertical="20dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Welcome !!!"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/welcomeText"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="Welcome in Camera Bt Remote, this app allows you to remotely take pictures with your Canon mirorless by using Volume or headset buttons/dslr.\n\n"
+            android:gravity="left"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+
+
+        <TextView
+            android:id="@+id/welcomeText1"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="If your camera allows bluetooth pairing with a smartphone, please select phone pairing.\n"
+            android:gravity="left"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+
+        <Switch
+            android:id="@+id/PhonePairingSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Phone Pairing" />
+
+        <TextView
+            android:id="@+id/welcomeText3"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="\nIf your camera don't allows phone pairing but allows to pair with bluetooth remote such as th Canon Wireless Remote Control BR-E1 ,please select 'bluetooth remote pairing'. In this case, after having paired yuur phone with camera as bluetooth remote, don't forget to set your camera in remote shooting mode\n"
+            android:gravity="left"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+
+        <Switch
+            android:id="@+id/BtRemotePairingSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Bluetooth Remote Pairing" />
+
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/defaulLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
