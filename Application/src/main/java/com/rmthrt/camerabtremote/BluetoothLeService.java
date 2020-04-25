@@ -15,7 +15,6 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -25,7 +24,6 @@ import android.graphics.BitmapFactory;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.media.session.MediaSession;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
@@ -39,8 +37,10 @@ import android.support.v4.media.VolumeProviderCompat;
 import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.util.Log;
 import android.view.KeyEvent;
 
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
@@ -49,12 +49,14 @@ import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_DATA_AVAILABLE;
 import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_CONNECTED;
 import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_CONNECTED_AND_PAIRED;
 import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_DISCONNECTED;
-import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_IS_PAIRED;
-import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART;
-import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED;
-import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART;
+import static com.rmthrt.camerabtremote.GlobalConstants.PHONE_END_OF_PAIRING;
+import static com.rmthrt.camerabtremote.GlobalConstants.PHONE_PAIRING_FIRST_PART;
+import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_WAS_ALREADY_PAIRED;
+import static com.rmthrt.camerabtremote.GlobalConstants.PHONE_PAIRING_SECOND_PART;
 import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED;
 import static com.rmthrt.camerabtremote.GlobalConstants.EXTRA_DATA;
+import static com.rmthrt.camerabtremote.GlobalConstants.PAIRING_MODE_IS_REMOTE;
+import static com.rmthrt.camerabtremote.GlobalConstants.PAIRING_MODE_IS_PHONE;
 
 /**
  * Service for managing connection and data communication with a GATT server hosted on a
@@ -80,7 +82,7 @@ public class BluetoothLeService extends Service {
     public final static int SIGNAL_WAKE_IMMEDIATE = 12;
 
     public final static UUID UUID_CANON_REMOTE_SERVICE =
-            UUID.fromString(GattAttributes.CANON_BLUETOOTH_REMOTE_SERVICE);
+            UUID.fromString(GattAttributes.CANON_REMOTE_SERVICE);
 
     //Task configs
     public String currentMode = GlobalConstants.CLRModes.ONE;
@@ -115,6 +117,45 @@ public class BluetoothLeService extends Service {
 
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
+
+
+    private void unpairDevice(BluetoothDevice device) {
+        try {
+            Method m = device.getClass()
+                    .getMethod("removeBond", (Class[]) null);
+            m.invoke(device, (Object[]) null);
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+    }
+
+    public void phoneOrRemoteMode()
+    {
+        BluetoothGattService testingService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_REMOTE_SERVICE));
+
+
+        if(testingService!=null)
+        {
+            PAIRING_MODE_IS_REMOTE = true;
+            PAIRING_MODE_IS_PHONE = false;
+        }
+        else
+        {
+            testingService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_PHONE_SERVICE_2));
+            if(testingService!=null)
+            {
+                PAIRING_MODE_IS_REMOTE = false;
+                PAIRING_MODE_IS_PHONE = true;
+            }
+            else
+            {
+                PAIRING_MODE_IS_REMOTE = false;
+                PAIRING_MODE_IS_PHONE = false;
+            }
+        }
+
+
+    }
 
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
@@ -171,18 +212,18 @@ public class BluetoothLeService extends Service {
         public void onCharacteristicRead(
                 BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status
         ) {
-            if (UUID.fromString(GattAttributes.CANON_PAIRING_CHARACTERISTIC_CHECK_IF_PAIRED).equals(characteristic.getUuid()))
+            if (UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_CHECK_IF_PAIRED).equals(characteristic.getUuid()))
             {
                 byte[] data = characteristic.getValue();
 
                 int sum = checkSum(data);
                 if(checkSum(data) == 0)
                 {
-                    broadcastUpdate(ACTION_GATT_PAIRING_FIRST_PART, characteristic);
+                    broadcastUpdate(PHONE_PAIRING_FIRST_PART, characteristic);
                 }
                 else
                 {
-                    broadcastUpdate(ACTION_GATT_IS_PAIRED, characteristic);
+                    broadcastUpdate(PHONE_END_OF_PAIRING, characteristic);
                 }
                 return;
 
@@ -196,9 +237,9 @@ public class BluetoothLeService extends Service {
         public void onCharacteristicChanged(
                 BluetoothGatt gatt, BluetoothGattCharacteristic characteristic
         ) {
-            if (UUID.fromString(GattAttributes.CANON_PAIRING_CHARACTERISTIC_0).equals(characteristic.getUuid()))
+            if (UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_1).equals(characteristic.getUuid()))
             {
-                broadcastUpdate(ACTION_GATT_PAIRING_SECOND_PART , characteristic);
+                broadcastUpdate(PHONE_PAIRING_SECOND_PART, characteristic);
                 return;
             }
 
@@ -312,6 +353,7 @@ public class BluetoothLeService extends Service {
             //Log.d(TAG, "Trying to use an existing mBluetoothGatt for connection."+mBluetoothDeviceAddress);
             if (mBluetoothGatt.connect()) {
                 mConnectionState = STATE_CONNECTING;
+
                 return true;
             } else {
                 return false;
@@ -328,9 +370,10 @@ public class BluetoothLeService extends Service {
         mBluetoothGatt = device.connectGatt(this, false, mGattCallback);
         //Log.d(TAG, "Trying to create a new connection.");
         mBluetoothDeviceAddress = address;
-        mConnectionState = STATE_CONNECTING;
+        mConnectionState = STATE_CONNECTED;
         return true;
     }
+
     public void pairAndConnect() {
         mBluetoothAdapter = mBluetoothManager.getAdapter();
         if (mBluetoothAdapter == null) {
@@ -342,7 +385,7 @@ public class BluetoothLeService extends Service {
         }
         /*check if the service is available on the device*/
         BluetoothGattService mCustomService =
-                mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_BLUETOOTH_REMOTE_SERVICE));
+                mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_REMOTE_SERVICE));
         if (mCustomService == null) {
             //Log.w(TAG, "Custom BLE Service not found");
             return;
@@ -351,13 +394,12 @@ public class BluetoothLeService extends Service {
         /*get the read characteristic from the service*/
 
         BluetoothGattCharacteristic mWriteCharacteristic =
-                mCustomService.getCharacteristic(UUID.fromString(GattAttributes.CANON_PAIRING_SERVICE));
+                mCustomService.getCharacteristic(UUID.fromString(GattAttributes.CANON_REMOTE_PAIRING_SERVICE));
 
         byte[] controlChar = new byte[1];
         controlChar[0] = new Integer(3).byteValue();
 
-        String s = "CB Remote";
-        byte[] name = s.getBytes(StandardCharsets.US_ASCII);
+        byte[] name = android.os.Build.MODEL.getBytes(StandardCharsets.US_ASCII);
 
         byte[] value = new byte[controlChar.length + name.length];
         System.arraycopy(controlChar, 0, value, 0, controlChar.length);
@@ -368,7 +410,7 @@ public class BluetoothLeService extends Service {
             //Log.e(TAG, "Failed to write characteristic");
         }
 
-        broadcastUpdate(ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED);
+        broadcastUpdate(ACTION_GATT_WAS_ALREADY_PAIRED);
     }
     public void pairAndConnectFirstPart()
     {
@@ -422,8 +464,8 @@ public class BluetoothLeService extends Service {
     {
         final int internNbStep = nbStep;
 
-        BluetoothGattService pairingService1 = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_BLUETOOTH_REMOTE_SERVICE_PHONE_1));
-        BluetoothGattService pairingService2 = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_BLUETOOTH_REMOTE_SERVICE_PHONE_2));
+        BluetoothGattService pairingService1 = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_PHONE_SERVICE_1));
+        BluetoothGattService pairingService2 = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_PHONE_SERVICE_2));
         if (pairingService1 == null || pairingService2 == null)  return false;
 
         BluetoothGattCharacteristic mWriteCharacteristic ;
@@ -440,8 +482,8 @@ public class BluetoothLeService extends Service {
         switch(internNbStep){
             case 1 :
 
-                mWriteCharacteristic = pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PAIRING_CHARACTERISTIC_0));
-                BluetoothGattDescriptor mWriteCharacteristicDescriptor= mWriteCharacteristic.getDescriptor(UUID.fromString(GattAttributes.CANON_PAIRING_DESCRIPTOR));
+                mWriteCharacteristic = pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_1));
+                BluetoothGattDescriptor mWriteCharacteristicDescriptor= mWriteCharacteristic.getDescriptor(UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_DESCRIPTOR));
 
                 if(!mBluetoothGatt.readDescriptor(mWriteCharacteristicDescriptor))return false;
                 if(!mBluetoothGatt.setCharacteristicNotification(mWriteCharacteristic, true))return false;
@@ -450,8 +492,8 @@ public class BluetoothLeService extends Service {
 
 
             case 2 :
-                mWriteCharacteristic = pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PAIRING_CHARACTERISTIC_0));
-                BluetoothGattDescriptor clientConfig = mWriteCharacteristic.getDescriptor(UUID.fromString(GattAttributes.CANON_PAIRING_DESCRIPTOR));
+                mWriteCharacteristic = pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_1));
+                BluetoothGattDescriptor clientConfig = mWriteCharacteristic.getDescriptor(UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_DESCRIPTOR));
 
                 if(!clientConfig.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)) return false;
                 if(!mBluetoothGatt.writeDescriptor(clientConfig)) return false;
@@ -459,7 +501,7 @@ public class BluetoothLeService extends Service {
                 break;
 
             case 3 :
-                mWriteCharacteristic = pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PAIRING_CHARACTERISTIC_0));
+                mWriteCharacteristic = pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_1));
                 mWriteCharacteristic.setValue(value);
 
                 if (!mBluetoothGatt.writeCharacteristic(mWriteCharacteristic))return false;
@@ -470,7 +512,7 @@ public class BluetoothLeService extends Service {
             case 4 :
                 value[0] = 0x04;
 
-                mWriteCharacteristic =  pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PAIRING_CHARACTERISTIC_1));
+                mWriteCharacteristic =  pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_2));
                 mWriteCharacteristic.setValue(value);
 
                 if (!mBluetoothGatt.writeCharacteristic(mWriteCharacteristic))return false;
@@ -482,7 +524,7 @@ public class BluetoothLeService extends Service {
                 control2Chars[0] = 0x05;
                 control2Chars[1] = 0x02;
 
-                mWriteCharacteristic =  pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PAIRING_CHARACTERISTIC_1));
+                mWriteCharacteristic =  pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_2));
                 mWriteCharacteristic.setValue(control2Chars);
 
                 if (!mBluetoothGatt.writeCharacteristic(mWriteCharacteristic)) return false;
@@ -491,7 +533,7 @@ public class BluetoothLeService extends Service {
             case 6 :
                 controlChar[0] = 0x0a;
 
-                mWriteCharacteristic =  pairingService2.getCharacteristic(UUID.fromString(GattAttributes.CANON_PAIRING_SERVICE_PHONE_2));
+                mWriteCharacteristic =  pairingService2.getCharacteristic(UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_SERVICE));
                 mWriteCharacteristic.setValue(controlChar);
 
                 if (!mBluetoothGatt.writeCharacteristic(mWriteCharacteristic)) return false;
@@ -502,7 +544,7 @@ public class BluetoothLeService extends Service {
             case 7 :
                 controlChar[0] = 0x01;
 
-                mWriteCharacteristic =  pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PAIRING_CHARACTERISTIC_1));
+                mWriteCharacteristic =  pairingService1.getCharacteristic(UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_2));
                 mWriteCharacteristic.setValue(controlChar);
 
                 if (!mBluetoothGatt.writeCharacteristic(mWriteCharacteristic)) return false;
@@ -524,9 +566,9 @@ public class BluetoothLeService extends Service {
     public void CheckIfPaired() {
 
 
-        BluetoothGattService pairingService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_BLUETOOTH_REMOTE_SERVICE_PHONE_2));
+        BluetoothGattService pairingService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_PHONE_SERVICE_2));
 
-        BluetoothGattCharacteristic mReadCharacteristic = pairingService.getCharacteristic(UUID.fromString(GattAttributes.CANON_PAIRING_CHARACTERISTIC_CHECK_IF_PAIRED));
+        BluetoothGattCharacteristic mReadCharacteristic = pairingService.getCharacteristic(UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_CHECK_IF_PAIRED));
 
         mBluetoothGatt.readCharacteristic(mReadCharacteristic);
 
@@ -738,8 +780,8 @@ public class BluetoothLeService extends Service {
         final BluetoothGattCharacteristic mWriteCharacteristicShutter;
         final byte[] controlChar = new byte[2];
 
-        if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,false)) {
-            mCustomService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_SHUTTER_CONTROL_SERVICE_PHONE_3));
+        if(PAIRING_MODE_IS_PHONE) {
+            mCustomService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_PHONE_SHUTTER_CONTROL_SERVICE));
 
             if (mCustomService == null) {
                 //Log.w(TAG, "Custom BLE Service not found");
@@ -748,21 +790,21 @@ public class BluetoothLeService extends Service {
 
             //Log.d(TAG, "Firing a shot");
             mWriteCharacteristicShutter =
-                    mCustomService.getCharacteristic(UUID.fromString(GattAttributes.CANON_SHUTTER_CONTROL_CHARACTERISTIC));
+                    mCustomService.getCharacteristic(UUID.fromString(GattAttributes.CANON_PHONE_SHUTTER_CONTROL_CHARACTERISTIC));
 
             controlChar[1] = new Integer(1).byteValue();
         }
         else
         {
-
-            mCustomService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_BLUETOOTH_REMOTE_SERVICE));
+            //then it is in remote pairing mode
+            mCustomService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_REMOTE_SERVICE));
             if (mCustomService == null) {
                 //Log.w(TAG, "Custom BLE Service not found");
                 return;
             }
 
             //Log.d(TAG, "Firing a shot");
-            mWriteCharacteristicShutter = mCustomService.getCharacteristic(UUID.fromString(GattAttributes.CANON_SHUTTER_CONTROL_SERVICE));
+            mWriteCharacteristicShutter = mCustomService.getCharacteristic(UUID.fromString(GattAttributes.CANON_REMOTE_SHUTTER_CONTROL_SERVICE));
         }
 
         mWriteCharacteristicShutter.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
@@ -795,7 +837,7 @@ public class BluetoothLeService extends Service {
                 //Log.d(TAG, "trying write");
                 controlChar[1] = new Integer(2).byteValue();
                 mWriteCharacteristicShutter.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-                if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,false)) {
+                if(PAIRING_MODE_IS_PHONE) {
                     mWriteCharacteristicShutter.setValue(controlChar);
                 }
                 else
@@ -906,7 +948,7 @@ public class BluetoothLeService extends Service {
         timerHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                final Intent intent2 = new Intent(ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED);
+                final Intent intent2 = new Intent(ACTION_GATT_WAS_ALREADY_PAIRED);
 
                 sendBroadcast(intent2);
 

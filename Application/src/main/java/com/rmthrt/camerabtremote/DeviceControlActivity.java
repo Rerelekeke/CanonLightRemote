@@ -10,40 +10,25 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
-import android.media.AudioAttributes;
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
-import android.media.session.MediaController;
-import android.media.session.MediaSessionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
-import android.provider.Settings;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
-import android.util.Log;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
-import android.os.Vibrator;
-
-import java.util.List;
 
 import static android.os.SystemClock.sleep;
-import static java.security.AccessController.getContext;
+
+
+import static com.rmthrt.camerabtremote.GlobalConstants.PAIRING_MODE_IS_REMOTE;
+import static com.rmthrt.camerabtremote.GlobalConstants.PAIRING_MODE_IS_PHONE;
 
 /**
  * For a given BLE device, this Activity provides the user interface to connect, display data,
@@ -66,6 +51,7 @@ public class DeviceControlActivity extends Activity {
     public static final String NOT_USING_VOLUME_BUTTONS = "NOT_USING_VOLUME_BUTTONS";
     public static final String USING_HEADSET = "USING_HEADSET";
     public static final String NOT_USING_HEADSET = "NOT_USING_HEADSET";
+
 
 
     private IBinder mIBinder;
@@ -140,6 +126,7 @@ public class DeviceControlActivity extends Activity {
             if (GlobalConstants.ACTION_GATT_CONNECTED.equals(action)) {
                 mConnected = true;
                 invalidateOptionsMenu();
+
             } else if (GlobalConstants.ACTION_GATT_CONNECTED_AND_PAIRED.equals(action)){
                 updateConnectionState(R.string.connected);
             } else if (GlobalConstants.ACTION_GATT_DISCONNECTED.equals(action)) {
@@ -148,30 +135,35 @@ public class DeviceControlActivity extends Activity {
                 invalidateOptionsMenu();
                 mBluetoothLeService.connect(mDeviceAddress);
             } else if (GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
-                if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,false))
-                {
+
+                //check if camera is in remote or phone bluetooth pairing status
+                mBluetoothLeService.phoneOrRemoteMode();
+                if (PAIRING_MODE_IS_PHONE) {
                     mBluetoothLeService.CheckIfPaired();
+                    return;
                 }
-                else
+                if (PAIRING_MODE_IS_REMOTE)
                 {
                     mBluetoothLeService.pairAndConnect();
+                    return;
                 }
+                updateConnectionState(R.string.connection_error);
 
             }
-            else if (GlobalConstants.ACTION_GATT_IS_PAIRED.equals(action)) {
+            else if (GlobalConstants.PHONE_END_OF_PAIRING.equals(action)) {
                 mBluetoothLeService.pairAndConnectByStep(7);
                 sleep(1000);
                 updateConnectionState(R.string.connected);
             }
-            else if (GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART.equals(action)) {
+            else if (GlobalConstants.PHONE_PAIRING_FIRST_PART.equals(action)) {
                 updateConnectionState(R.string.connecting);
                 mBluetoothLeService.pairAndConnectFirstPart();
                 mBluetoothLeService.isPaired();
             }
-            else if (GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART.equals(action)) {
+            else if (GlobalConstants.PHONE_PAIRING_SECOND_PART.equals(action)) {
                 mBluetoothLeService.pairAndConnectSecondPart();
             }
-            else if(GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED.equals(action))
+            else if(GlobalConstants.ACTION_GATT_WAS_ALREADY_PAIRED.equals(action))
             {
                 //if(false == mBluetoothLeService.getFullPairing()) {
                     updateConnectionState(R.string.connected);
@@ -334,8 +326,13 @@ public class DeviceControlActivity extends Activity {
             mBluetoothLeService.mUsingVibrator = true;
 
         } else if (BluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTING) {
+            if(PAIRING_MODE_IS_REMOTE)
+            {
+                mBluetoothLeService.pairAndConnect();
+            }
             updateConnectionState(R.string.connecting);
             invalidateOptionsMenu();
+
         } else {
             updateConnectionState(R.string.disconnected);
             invalidateOptionsMenu();
@@ -442,10 +439,10 @@ public class DeviceControlActivity extends Activity {
         intentFilter.addAction(GlobalConstants.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED);
         intentFilter.addAction(GlobalConstants.ACTION_DATA_AVAILABLE);
-        intentFilter.addAction(GlobalConstants.ACTION_GATT_PAIRING_SECOND_PART);
-        intentFilter.addAction(GlobalConstants.ACTION_GATT_IS_PAIRED);
-        intentFilter.addAction(GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART);
-        intentFilter.addAction(GlobalConstants.ACTION_GATT_PAIRING_FIRST_PART_WAS_PAIRED);
+        intentFilter.addAction(GlobalConstants.PHONE_PAIRING_SECOND_PART);
+        intentFilter.addAction(GlobalConstants.PHONE_END_OF_PAIRING);
+        intentFilter.addAction(GlobalConstants.PHONE_PAIRING_FIRST_PART);
+        intentFilter.addAction(GlobalConstants.ACTION_GATT_WAS_ALREADY_PAIRED);
         return intentFilter;
     }
 

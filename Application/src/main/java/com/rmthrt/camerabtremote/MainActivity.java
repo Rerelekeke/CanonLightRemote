@@ -35,6 +35,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -78,28 +79,37 @@ public class MainActivity extends AppCompatActivity {
         final Intent intent = new Intent(getApplicationContext(), DeviceControlActivity.class);
         intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
         intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+
         if(Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2  && device.getBondState() == BluetoothDevice.BOND_NONE) {
 
             device.createBond();
         }
+        if(device.getBondState() != BluetoothDevice.BOND_NONE)
+        {
+            if (mScanning) {
+                scanLeDevice(false);
+            }
 
-        if (mScanning) {
-            scanLeDevice(false);
+            mBluetoothAdapter.getBluetoothLeScanner().stopScan(mLeScanCallback);
+            startActivity(intent);
         }
 
-        mBluetoothAdapter.getBluetoothLeScanner().stopScan(mLeScanCallback);
-        startActivity(intent);
 
     }
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_launcher);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayUseLogoEnabled(true);
-        getSupportActionBar().setLogo(R.drawable.ic_launcher);
+        getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setTitle("Camera Bt Remote");
 
         persistency = getSharedPreferences(PERSISTENCY_DEVICE_ADDRESS, Context.MODE_PRIVATE);
@@ -189,9 +199,15 @@ public class MainActivity extends AppCompatActivity {
             case R.id.menu_stop:
                 scanLeDevice(false);
                 break;
+            case android.R.id.home:
+                final Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+                startActivity(intent);
+                return true;
         }
         return true;
     }
+
+
 
     @Override
     protected void onResume() {
@@ -479,5 +495,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
 
 }

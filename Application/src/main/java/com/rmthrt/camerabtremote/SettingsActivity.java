@@ -25,16 +25,19 @@ public class SettingsActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        if(DeviceControlActivity.getDeviceName()==null)
-        {
-            findViewById(R.id.welcomeLayout).setVisibility(View.VISIBLE);
-            findViewById(R.id.defaulLayout).setVisibility(View.INVISIBLE);
-        }
-        else
-        {
-            findViewById(R.id.welcomeLayout).setVisibility(View.INVISIBLE);
-            findViewById(R.id.defaulLayout).setVisibility(View.VISIBLE);
-        }
+//        if(DeviceControlActivity.getDeviceName()==null)
+//        {
+//            findViewById(R.id.welcomeLayout).setVisibility(View.VISIBLE);
+//            findViewById(R.id.resetLayout).setVisibility(View.INVISIBLE);
+//        }
+//        else
+//        {
+//            findViewById(R.id.welcomeLayout).setVisibility(View.INVISIBLE);
+//            findViewById(R.id.resetLayout).setVisibility(View.VISIBLE);
+//        }
+
+        findViewById(R.id.defaultLayout).setVisibility(View.VISIBLE);
+
 
         mResetDefaultDeviceButton = findViewById(R.id.resetDefaultDeviceButton);
         mDefaultDeviceTextView = findViewById(R.id.defaultDeviceTextView);
@@ -44,24 +47,40 @@ public class SettingsActivity extends Activity {
         mPhonePairingSwitch = findViewById(R.id.PhonePairingSwitch);
         mBtRemotePairingSwitch = findViewById(R.id.BtRemotePairingSwitch);
 
-        mPhonePairingSwitch.setChecked(!MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,false));
-        mBtRemotePairingSwitch.setChecked(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,false));
+        mPhonePairingSwitch.setChecked(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,false));
+        mBtRemotePairingSwitch.setChecked(!MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,false));
 
         mPhonePairingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                SharedPreferences.Editor editor = MainActivity.persistency.edit();
                 if(mPhonePairingSwitch.isChecked())
                 {
                     mBtRemotePairingSwitch.setChecked(false);
+                    editor.putBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING, true);
                 }
+                else
+                {
+                    mBtRemotePairingSwitch.setChecked(true);
+                    editor.putBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING, false);
+                }
+                editor.commit();
             }
         });
 
         mBtRemotePairingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                SharedPreferences.Editor editor = MainActivity.persistency.edit();
                 if(mBtRemotePairingSwitch.isChecked())
                 {
                     mPhonePairingSwitch.setChecked(false);
+                    editor.putBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING, false);
                 }
+                else
+                {
+                    mPhonePairingSwitch.setChecked(true);
+                    editor.putBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING, true);
+                }
+                editor.commit();
             }
         });
 
@@ -88,9 +107,6 @@ public class SettingsActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        SharedPreferences.Editor editor = MainActivity.persistency.edit();
-        editor.putBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING, false);
-        editor.commit();
     }
 
 
