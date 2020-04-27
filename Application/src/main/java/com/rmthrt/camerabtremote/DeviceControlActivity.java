@@ -138,6 +138,9 @@ public class DeviceControlActivity extends Activity {
 
                 //check if camera is in remote or phone bluetooth pairing status
                 mBluetoothLeService.phoneOrRemoteMode();
+
+            }
+            else if (GlobalConstants.REMOTE_OR_PHONE_RESPONSE.equals(action)) {
                 if (PAIRING_MODE_IS_PHONE) {
                     mBluetoothLeService.CheckIfPaired();
                     return;
@@ -148,7 +151,6 @@ public class DeviceControlActivity extends Activity {
                     return;
                 }
                 updateConnectionState(R.string.connection_error);
-
             }
             else if (GlobalConstants.PHONE_END_OF_PAIRING.equals(action)) {
                 mBluetoothLeService.pairAndConnectByStep(7);
@@ -439,6 +441,7 @@ public class DeviceControlActivity extends Activity {
         intentFilter.addAction(GlobalConstants.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED);
         intentFilter.addAction(GlobalConstants.ACTION_DATA_AVAILABLE);
+        intentFilter.addAction(GlobalConstants.REMOTE_OR_PHONE_RESPONSE);
         intentFilter.addAction(GlobalConstants.PHONE_PAIRING_SECOND_PART);
         intentFilter.addAction(GlobalConstants.PHONE_END_OF_PAIRING);
         intentFilter.addAction(GlobalConstants.PHONE_PAIRING_FIRST_PART);

@@ -50,6 +50,7 @@ import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_CONNECTED;
 import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_CONNECTED_AND_PAIRED;
 import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_DISCONNECTED;
 import static com.rmthrt.camerabtremote.GlobalConstants.PHONE_END_OF_PAIRING;
+import static com.rmthrt.camerabtremote.GlobalConstants.REMOTE_OR_PHONE_RESPONSE;
 import static com.rmthrt.camerabtremote.GlobalConstants.PHONE_PAIRING_FIRST_PART;
 import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_WAS_ALREADY_PAIRED;
 import static com.rmthrt.camerabtremote.GlobalConstants.PHONE_PAIRING_SECOND_PART;
@@ -132,28 +133,30 @@ public class BluetoothLeService extends Service {
     public void phoneOrRemoteMode()
     {
         BluetoothGattService testingService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_REMOTE_SERVICE));
-
+        BluetoothGattCharacteristic lReadCharacteristic;
 
         if(testingService!=null)
         {
-            PAIRING_MODE_IS_REMOTE = true;
-            PAIRING_MODE_IS_PHONE = false;
+            lReadCharacteristic = testingService.getCharacteristic(UUID.fromString(GattAttributes.CANON_REMOTE_CHARACTERISTIC));
+            mBluetoothGatt.readCharacteristic(lReadCharacteristic);
+
         }
         else
         {
-            testingService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_PHONE_SERVICE_2));
-            if(testingService!=null)
+            testingService = mBluetoothGatt.getService(UUID.fromString(GattAttributes.CANON_PHONE_SERVICE_1));
+
+            if(testingService!=null )//&& readData == "0x01") SET THIS
             {
-                PAIRING_MODE_IS_REMOTE = false;
-                PAIRING_MODE_IS_PHONE = true;
+                lReadCharacteristic = testingService.getCharacteristic(UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_3));
+                mBluetoothGatt.readCharacteristic(lReadCharacteristic);
             }
             else
             {
                 PAIRING_MODE_IS_REMOTE = false;
                 PAIRING_MODE_IS_PHONE = false;
             }
-        }
 
+        }
 
     }
 
@@ -227,6 +230,39 @@ public class BluetoothLeService extends Service {
                 }
                 return;
 
+            }
+            if (UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_3).equals(characteristic.getUuid())) {
+                byte[] data = characteristic.getValue();
+
+                if(data.length==1 )
+                {
+                    PAIRING_MODE_IS_REMOTE = false;
+                    PAIRING_MODE_IS_PHONE = true;
+                }
+                else
+                {
+                    //
+                    PAIRING_MODE_IS_REMOTE = false;
+                    PAIRING_MODE_IS_PHONE = false;
+                }
+                broadcastUpdate(REMOTE_OR_PHONE_RESPONSE, characteristic);
+            }
+
+            if (UUID.fromString(GattAttributes.CANON_REMOTE_CHARACTERISTIC).equals(characteristic.getUuid())) {
+                byte[] data = characteristic.getValue();
+
+                if(data.length==4 )
+                {
+                    PAIRING_MODE_IS_REMOTE = true;
+                    PAIRING_MODE_IS_PHONE = false;
+                }
+                else
+                {
+                    //
+                    PAIRING_MODE_IS_REMOTE = false;
+                    PAIRING_MODE_IS_PHONE = false;
+                }
+                broadcastUpdate(REMOTE_OR_PHONE_RESPONSE, characteristic);
             }
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);

@@ -5,6 +5,7 @@ import java.util.HashMap;
 public class GattAttributes {
     private static HashMap<String, String> attributes = new HashMap<>();
     public static String CANON_REMOTE_SERVICE = "00050000-0000-1000-0000-d8492fffa821";
+    public static String CANON_REMOTE_CHARACTERISTIC = "00050001-0000-1000-0000-d8492fffa821";
     public static String CANON_REMOTE_PAIRING_SERVICE = "00050002-0000-1000-0000-d8492fffa821";
     public static String CANON_REMOTE_SHUTTER_CONTROL_SERVICE = "00050003-0000-1000-0000-d8492fffa821";
 
@@ -16,6 +17,7 @@ public class GattAttributes {
     public static String CANON_PHONE_PAIRING_DESCRIPTOR = "00002902-0000-1000-8000-00805f9b34fb";
     public static String CANON_PHONE_PAIRING_CHARACTERISTIC_1 = "00010006-0000-1000-0000-d8492fffa821";
     public static String CANON_PHONE_PAIRING_CHARACTERISTIC_2 = "0001000a-0000-1000-0000-d8492fffa821";
+    public static String CANON_PHONE_PAIRING_CHARACTERISTIC_3 = "00010005-0000-1000-0000-d8492fffa821";
     public static String CANON_PHONE_PAIRING_CHARACTERISTIC_CHECK_IF_PAIRED = "00020004-0000-1000-0000-d8492fffa821";
     public static String CANON_PHONE_SHUTTER_CONTROL_CHARACTERISTIC = "00030030-0000-1000-0000-d8492fffa821";
 

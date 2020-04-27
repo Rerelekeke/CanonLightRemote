@@ -10,6 +10,7 @@ public class GlobalConstants {
     public final static String ACTION_GATT_DISCONNECTED = "com.rmthrt.camerabtremote.bluetooth.le.ACTION_GATT_DISCONNECTED";
     public final static String ACTION_GATT_SERVICES_DISCOVERED = "com.rmthrt.camerabtremote.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED";
     public final static String ACTION_DATA_AVAILABLE = "com.rmthrt.camerabtremote.bluetooth.le.ACTION_DATA_AVAILABLE";
+    public final static String REMOTE_OR_PHONE_RESPONSE = "com.rmthrt.camerabtremote.bluetooth.le.REMOTE_OR_PHONE_ANSWER";
     public final static String PHONE_PAIRING_SECOND_PART = "com.rmthrt.camerabtremote.bluetooth.le.ACTION_GATT_PAIRING_SECOND_PART";
     public final static String PHONE_END_OF_PAIRING = "com.rmthrt.camerabtremote.bluetooth.le.ACTION_GATT_IS_PAIRED";
     public final static String PHONE_PAIRING_FIRST_PART = "com.rmthrt.camerabtremote.bluetooth.le.ACTION_GATT_PAIRING_FIRST_PART";
