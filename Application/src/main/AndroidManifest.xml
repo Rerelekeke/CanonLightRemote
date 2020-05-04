@@ -15,6 +15,7 @@
     -->
 
 
+
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="true" />
@@ -31,7 +32,8 @@
     <application
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.Holo.Light">
+        android:theme="@android:style/Theme.Holo.Light"
+        >
 
 
         <service
@@ -39,6 +41,9 @@
             android:enabled="true"
             android:stopWithTask="false" />
 
+        <activity
+            android:name="com.rmthrt.camerabtremote.PairingErrorActivity"
+            android:screenOrientation="portrait" />
         <activity
         android:name="com.rmthrt.camerabtremote.SettingsActivity"
         android:screenOrientation="portrait" />

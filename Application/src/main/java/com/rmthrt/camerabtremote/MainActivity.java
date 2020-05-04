@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
     public static String PERSISTENCY_USING_VOLUME_BUTTONS = "usingvolumebuttons";
     public static String PERSISTENCY_USING_VIBRATOR = "usingvvibrator";
     public static String PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING = "usingphoneorbluetoothpairing";
+    public static BluetoothDevice mdevice;
 
 
     private void IntentDeviceConnection(BluetoothDevice device)
@@ -91,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             mBluetoothAdapter.getBluetoothLeScanner().stopScan(mLeScanCallback);
+            mdevice = device;
             startActivity(intent);
         }
 
@@ -158,14 +160,17 @@ public class MainActivity extends AppCompatActivity {
         }
 
         String  alreadyPairedDevice = persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null);
-        if(alreadyPairedDevice.equals("None"))
-        {
-            SharedPreferences.Editor editor = MainActivity.persistency.edit();
-            editor.putBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING, false);
-            editor.commit();
-            final Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
-            startActivity(intent);
-        }
+
+            if(alreadyPairedDevice==null)
+            {
+                SharedPreferences.Editor editor = MainActivity.persistency.edit();
+                editor.putBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING, false);
+                editor.commit();
+                final Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+                startActivity(intent);
+            }
+
+
     }
 
 

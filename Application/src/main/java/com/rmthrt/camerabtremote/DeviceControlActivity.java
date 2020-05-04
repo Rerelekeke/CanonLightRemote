@@ -54,6 +54,7 @@ public class DeviceControlActivity extends Activity {
 
 
 
+    public static Activity thisActivity;
     private IBinder mIBinder;
 
     private TextView mConnectionState;
@@ -133,14 +134,14 @@ public class DeviceControlActivity extends Activity {
                 mConnected = false;
                 updateConnectionState(R.string.disconnected);
                 invalidateOptionsMenu();
-                mBluetoothLeService.connect(mDeviceAddress);
+                //mBluetoothLeService.connect(mDeviceAddress);
             } else if (GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
 
                 //check if camera is in remote or phone bluetooth pairing status
                 mBluetoothLeService.phoneOrRemoteMode();
 
             }
-            else if (GlobalConstants.REMOTE_OR_PHONE_RESPONSE.equals(action)) {
+            else if (GlobalConstants.REMOTE_OR_PHONE_GOOD_RESPONSE.equals(action)) {
                 if (PAIRING_MODE_IS_PHONE) {
                     mBluetoothLeService.CheckIfPaired();
                     return;
@@ -150,7 +151,15 @@ public class DeviceControlActivity extends Activity {
                     mBluetoothLeService.pairAndConnect();
                     return;
                 }
-                updateConnectionState(R.string.connection_error);
+            }
+            else if (GlobalConstants.REMOTE_OR_PHONE_BAD_RESPONSE.equals(action)) {
+                mBluetoothLeService.mUsingVibrator = false;
+                mBluetoothLeService.disconnect();
+                intent = new Intent(getApplicationContext(), PairingErrorActivity.class);
+                startActivity(intent);
+                mBluetoothLeService.stopForegroundService();
+                mBluetoothLeService.tryServiceStopSelf();
+                finish();
             }
             else if (GlobalConstants.PHONE_END_OF_PAIRING.equals(action)) {
                 mBluetoothLeService.pairAndConnectByStep(7);
@@ -179,6 +188,10 @@ public class DeviceControlActivity extends Activity {
     static public String getDeviceName()
     {
         return mDeviceName;
+    }
+    static public void resetDeviceName()
+    {
+        mDeviceName = null;
     }
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
@@ -210,7 +223,7 @@ public class DeviceControlActivity extends Activity {
 
 
 
-        if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_HEADSET,false) == true)
+        if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_HEADSET,true) == true)
         {
             mButtonHeadset.setSelected(true);
             sendBroadcast(new Intent(USING_HEADSET));
@@ -221,7 +234,7 @@ public class DeviceControlActivity extends Activity {
             sendBroadcast(new Intent(NOT_USING_HEADSET));
         }
 
-        if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_VOLUME_BUTTONS,false) == true)
+        if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_VOLUME_BUTTONS,true) == true)
         {
             mButtonVolumeButtons.setSelected(true);
             sendBroadcast(new Intent(USING_VOLUME_BUTTONS));
@@ -232,7 +245,7 @@ public class DeviceControlActivity extends Activity {
             sendBroadcast(new Intent(NOT_USING_VOLUME_BUTTONS));
         }
 
-        if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_VIBRATOR,false) == true)
+        if(MainActivity.persistency.getBoolean(MainActivity.PERSISTENCY_USING_VIBRATOR,true) == true)
         {
             mButtonVibrator.setSelected(true);
             sendBroadcast(new Intent(USING_VIBRATOR));
@@ -250,6 +263,7 @@ public class DeviceControlActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        thisActivity = this;
         setContentView(R.layout.remote_control);
 
 
@@ -263,6 +277,7 @@ public class DeviceControlActivity extends Activity {
         final Intent intent = getIntent();
         mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
         mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
+
 
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
 
@@ -305,6 +320,12 @@ public class DeviceControlActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+
+        final Intent intent = getIntent();
+
+
+
+        thisActivity = this;
         setConfigDisplay();
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, makeUIUpdateIntentFilter());
@@ -320,7 +341,11 @@ public class DeviceControlActivity extends Activity {
             //Log.d(TAG, "Connect request result=" + result);
         }
 
+
+
         BluetoothLeService.isControlActivityVisible = true;
+
+        //if(mBluetoothLeService.mUsingVibrator == null) return;
 
         if (BluetoothLeService.mConnectionState == BluetoothLeService.STATE_CONNECTED) {
             mBluetoothLeService.mUsingVibrator = false;
@@ -331,10 +356,15 @@ public class DeviceControlActivity extends Activity {
             if(PAIRING_MODE_IS_REMOTE)
             {
                 mBluetoothLeService.pairAndConnect();
+
+
+            if(PAIRING_MODE_IS_REMOTE)
+            {
+                mBluetoothLeService.pairAndConnect();
             }
             updateConnectionState(R.string.connecting);
             invalidateOptionsMenu();
-
+            }
         } else {
             updateConnectionState(R.string.disconnected);
             invalidateOptionsMenu();
@@ -384,12 +414,13 @@ public class DeviceControlActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.menu_connect: mConnectionState.setText(R.string.connecting);
+            case R.id.menu_connect:
                 if (mBluetoothLeService == null) {
                     initBluetoothConnection(mIBinder);
                     return true;
                 }
-                mBluetoothLeService.connect(mDeviceAddress);
+                //mBluetoothLeService.connect(mDeviceAddress);
+                mConnectionState.setText(R.string.connecting);
                 return true;
             case R.id.menu_disconnect:
                 warnDisconnect(false);
@@ -432,6 +463,7 @@ public class DeviceControlActivity extends Activity {
 
 
     // Demonstrates how to iterate through the supported GATT Services/Characteristics.
+
     // In this sample, we populate the data structure that is bound to the ExpandableListView
     // on the UI.
 
@@ -441,7 +473,8 @@ public class DeviceControlActivity extends Activity {
         intentFilter.addAction(GlobalConstants.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(GlobalConstants.ACTION_GATT_SERVICES_DISCOVERED);
         intentFilter.addAction(GlobalConstants.ACTION_DATA_AVAILABLE);
-        intentFilter.addAction(GlobalConstants.REMOTE_OR_PHONE_RESPONSE);
+        intentFilter.addAction(GlobalConstants.REMOTE_OR_PHONE_GOOD_RESPONSE);
+        intentFilter.addAction(GlobalConstants.REMOTE_OR_PHONE_BAD_RESPONSE);
         intentFilter.addAction(GlobalConstants.PHONE_PAIRING_SECOND_PART);
         intentFilter.addAction(GlobalConstants.PHONE_END_OF_PAIRING);
         intentFilter.addAction(GlobalConstants.PHONE_PAIRING_FIRST_PART);

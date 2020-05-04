@@ -21,9 +21,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
@@ -50,7 +47,8 @@ import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_CONNECTED;
 import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_CONNECTED_AND_PAIRED;
 import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_DISCONNECTED;
 import static com.rmthrt.camerabtremote.GlobalConstants.PHONE_END_OF_PAIRING;
-import static com.rmthrt.camerabtremote.GlobalConstants.REMOTE_OR_PHONE_RESPONSE;
+import static com.rmthrt.camerabtremote.GlobalConstants.REMOTE_OR_PHONE_GOOD_RESPONSE;
+import static com.rmthrt.camerabtremote.GlobalConstants.REMOTE_OR_PHONE_BAD_RESPONSE;
 import static com.rmthrt.camerabtremote.GlobalConstants.PHONE_PAIRING_FIRST_PART;
 import static com.rmthrt.camerabtremote.GlobalConstants.ACTION_GATT_WAS_ALREADY_PAIRED;
 import static com.rmthrt.camerabtremote.GlobalConstants.PHONE_PAIRING_SECOND_PART;
@@ -233,36 +231,31 @@ public class BluetoothLeService extends Service {
             }
             if (UUID.fromString(GattAttributes.CANON_PHONE_PAIRING_CHARACTERISTIC_3).equals(characteristic.getUuid())) {
                 byte[] data = characteristic.getValue();
-
+                PAIRING_MODE_IS_REMOTE = false;
+                PAIRING_MODE_IS_PHONE = true;
                 if(data.length==1 )
                 {
-                    PAIRING_MODE_IS_REMOTE = false;
-                    PAIRING_MODE_IS_PHONE = true;
+                    broadcastUpdate(REMOTE_OR_PHONE_GOOD_RESPONSE, characteristic);
                 }
                 else
                 {
-                    //
-                    PAIRING_MODE_IS_REMOTE = false;
-                    PAIRING_MODE_IS_PHONE = false;
+                    broadcastUpdate(REMOTE_OR_PHONE_BAD_RESPONSE, characteristic);
                 }
-                broadcastUpdate(REMOTE_OR_PHONE_RESPONSE, characteristic);
             }
 
             if (UUID.fromString(GattAttributes.CANON_REMOTE_CHARACTERISTIC).equals(characteristic.getUuid())) {
                 byte[] data = characteristic.getValue();
-
+                PAIRING_MODE_IS_REMOTE = true;
+                PAIRING_MODE_IS_PHONE = false;
                 if(data.length==4 )
                 {
-                    PAIRING_MODE_IS_REMOTE = true;
-                    PAIRING_MODE_IS_PHONE = false;
+                    broadcastUpdate(REMOTE_OR_PHONE_GOOD_RESPONSE, characteristic);
                 }
                 else
                 {
-                    //
-                    PAIRING_MODE_IS_REMOTE = false;
-                    PAIRING_MODE_IS_PHONE = false;
+                    broadcastUpdate(REMOTE_OR_PHONE_BAD_RESPONSE, characteristic);
                 }
-                broadcastUpdate(REMOTE_OR_PHONE_RESPONSE, characteristic);
+
             }
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
@@ -908,17 +901,7 @@ public class BluetoothLeService extends Service {
                     //Log.e(TAG, "Failed to write characteristic Shutter");
                     sigLockShutter = false;
                 }
-//                if (mBluetoothGatt.writeCharacteristic(mWriteCharacteristicShutter) == false) {
-//                    //Log.e(TAG, "Failed to write characteristic");
-//                }
-//                if (mCustomService == null) {
-//                    //Log.w(TAG, "Custom BLE Service not found");
-//                    sigLockShutter = false;
-//                    return;
-//                }
-//
-//
-//
+
 //                sigLockShutter = false;
             }
         }, delayMilliSec);
@@ -1041,7 +1024,6 @@ public class BluetoothLeService extends Service {
                     LocalBroadcastManager.getInstance(mContext).sendBroadcast(intentS);
                     doShutter(1, repeat,false,0);
                     timeElapsed = 0;
-                    //doShutter(5, repeat,false,0);
 
                 }
             }
@@ -1072,7 +1054,7 @@ public class BluetoothLeService extends Service {
                     v.vibrate(VibrationEffect.createOneShot(vibrationDuration,1));
                 } else {
                     //deprecated in API 26
-                    v.vibrate(vibrationDuration);
+                    //v.vibrate(vibrationDuration);
                 }
             }
         }
@@ -1201,13 +1183,13 @@ public class BluetoothLeService extends Service {
             }
 
         });
-
-        //TODO check if follocing part really needed
-        AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
-                AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT), AudioTrack.MODE_STREAM);
-        audioTrack.play();
-        audioTrack.stop();
-        audioTrack.release();
+//
+//        //TODO check if follocing part really needed
+//        AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, 48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
+//                AudioTrack.getMinBufferSize(48000, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT), AudioTrack.MODE_STREAM);
+//        audioTrack.play();
+//        audioTrack.stop();
+//        audioTrack.release();
 
         ms.setActive(true);
 
