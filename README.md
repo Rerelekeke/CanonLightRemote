@@ -1,6 +1,6 @@
 # CameraBtRemote
-This app allows to trigger Canon camera shutter remotely with your phone, and using hardware volume buttons as well as headset button.
-Even Screen off. Discrete, simple and using less power.
+This app allows to trigger Canon camera shutter remotely with your phone, and using hardware volume buttons as well as headset button, even with Screen off.  
+Discrete, simple and using less power.
 
 ## Features
 **2 pairing mode**
