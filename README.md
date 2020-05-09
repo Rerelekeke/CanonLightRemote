@@ -3,7 +3,9 @@ This app allows to trigger Canon camera shutter remotely with your phone, and us
 Even Screen off. Discrete, simple and using less power.
 
 ## Features
-
+2 pairing mode :
+- Smartphone Pairing Mode if your Canon camera have the smartphone bluetooth pairing mode feature. ( easy repairing ability)
+- Remote Pairing Mode emulating the BR-E1 Bluetooth Remote behavior for those who don't have th luck to have a Canon Camera with    Bluetooth Smartphone Pairing Mode Available.
 
 ## Available on Google Play Store
 
