@@ -4,11 +4,17 @@ Even Screen off. Discrete, simple and using less power.
 
 ## Features
 2 pairing mode :
+
 - Smartphone Pairing Mode, available if your Canon camera have the smartphone bluetooth pairing mode feature. ( ex: EOS R and EOS RP)
 It allows auto repairing.
-- Remote Pairing Mode emulating the BR-E1 Bluetooth Remote behavior for those who don't have th luck to have a Canon Camera with    Bluetooth Smartphone Pairing Mode Available. Unfortunatelly, each time you shutdown you camera, you have to relaunch synchronization on it to get connection.
+
+- Remote Pairing Mode emulating the BR-E1 Bluetooth Remote behavior for those who don't have the luck to have a Canon Camera with    Bluetooth Smartphone Pairing Mode Available. 
+Unfortunatelly, each time you shutdown you camera, you have to relaunch synchronization on it to get connection.
 
 ## Available on Google Play Store
+
+This app is available on the Google Play Store by searching : "CameraBtRemote"
+
 
 **Installation**
 - From sources :
