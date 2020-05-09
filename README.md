@@ -17,22 +17,19 @@ This app is available on the Google Play Store by searching : "CameraBtRemote"
 
 
 **Installation**
-- From sources :
-```
-python3 -m pip install bleak
-```
-```
-python3 -m pip install matplotlib
-```
-```
-python3 -m pip install git+https://github.com/rerelekeke/HomeTrainerSoftware
-```
+If you want to get this project :
 
-**Start the Software** 🏁
+- install android studio
+- open the project
+- connect your phone to your computer with usb debug mode enabled
+- run the project
 
-  - `ble_Calculation_Power` or `python3 -m ble_Calculation_Power`
+Go to https://developer.android.com/ for more informations
+
 
 ## Contributing
 Please feel free to contribute and submit PR requests. All help is appreciated. 
+This app has been tested with eos r and eos rp. 
+I have some issue with headset control reliability by using music app in parallel, don't hesitate to help me if you want
 
 
