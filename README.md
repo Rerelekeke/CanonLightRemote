@@ -9,7 +9,13 @@ Even Screen off. Discrete, simple and using less power.
 It allows auto repairing.
 
 - Remote Pairing Mode emulating the BR-E1 Bluetooth Remote behavior for those who don't have the luck to have a Canon Camera with    Bluetooth Smartphone Pairing Mode Available. 
-Unfortunatelly, each time you shutdown you camera, you have to relaunch synchronization on it to get connection.
+Unfortunatelly, each time you shutdown your camera, you have to restart synchronization on it to get paired.
+
+Parameters :
+ - enable/disable Volume Button action (enable by default)
+ - enable/disable headset Button action (enable by default)
+ - enable/disable warning vibration for connection and disconnection (enable by default)
+ - reset device memorization to abort auto-connect to memorized device
 
 ## Available on Google Play Store
 
@@ -29,7 +35,9 @@ Go to https://developer.android.com/ for more informations
 
 ## Contributing
 Please feel free to contribute and submit PR requests. All help is appreciated. 
+
 This app has been tested with eos r and eos rp. 
+
 I have some issue with headset control reliability by using music app in parallel, don't hesitate to help me if you want
 
 
