@@ -1,5 +1,6 @@
 # CameraBtRemote
-Display Speed and Equivalent Power with BLE speed sensor for Home trainer ( Working with Tacx Satori 4/10 strength for now)
+This app allows to trigger Canon camera shutter remotely with your phone, and using hardware volume buttons as well as headset button.
+Even Screen off. Discrete, simple and using less power.
 
 ## Features
 
