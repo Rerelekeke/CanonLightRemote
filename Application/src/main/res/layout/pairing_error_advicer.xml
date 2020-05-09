@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+
+
+
+
+        <LinearLayout
+            android:id="@+id/PairingAdvicerTitleLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_gravity="center"
+            android:layout_margin="20dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent">
+
+
+                <TextView
+                    android:id="@+id/textView3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="Pairing advicer"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+
+        </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/RemotePairingLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/PairingAdvicerTitleLayout"
+        app:layout_constraintLeft_toLeftOf="parent">
+        <TextView
+            android:id="@+id/RemotePairingIntroduction"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:text="It sounds like you want to connect your phone to your camera as a remote.
+\nBut it is already paired with your camera as a smartphone. \nAn advice :  keep it like that, pairing abilites are much better in this mode.
+\nBut! This app is a democracy !"
+            android:gravity="left"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+        <TextView
+            android:id="@+id/RemotePairingStepIntroducer"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:text="So, if you really want to pair your phone as a remote to your camera, you’ll have to follow these steps :"
+            android:gravity="left"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+        <TextView
+            android:id="@+id/RemotePairingSteps"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="30dp"
+
+            android:text="• Step 1 : On your camera, select\nsmartphone pairing and delete pairing information
+\n• Step 2 :On your phone, Click on the unbond button bellow  WARNING : this will unbond the camera from the phone and close the app
+\n• Step 3: Try remote pairing again !"
+            android:gravity="left"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/PhonePairingLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/PairingAdvicerTitleLayout"
+        app:layout_constraintLeft_toLeftOf="parent">
+        <TextView
+            android:id="@+id/PhonePairingIntroduction"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:text="It sounds like you want to connect your phone to your camera as a smartphone.
+\nThis is a good idea ! Indeed, pairing and repairing ability are much higher in this mode!
+\nBut it is already paired with your camera as a remote, and your camera does not handle both pairing mode in the same time
+"
+            android:gravity="left"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+        <TextView
+            android:id="@+id/PhonePairingStepIntroducer"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:text="If you really want to pair your phone as a … smartphone to your camera, you’ll have to follow these steps :"
+            android:gravity="left"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+        <TextView
+            android:id="@+id/PhonePairingSteps"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="30dp"
+
+            android:text="• Step 1 : On your camera, select\nremote pairing and delete pairing information
+\n• Step 2 :On your phone, Click on the unbond button bellow  WARNING : this will unbond the camera from the phone and close the app
+\n• Step 3: Try smarphone pairing again !"
+            android:gravity="left"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/closeButtonLayout"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent">
+
+        <Button
+            android:id="@+id/unboundButton"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="UnBound"
+            android:onClick="unboundClick"/>
+        <Button
+            android:id="@+id/cancelButton"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Cancel"
+            android:onClick="cancelClick"/>
+    </LinearLayout>
+
+</android.support.constraint.ConstraintLayout>

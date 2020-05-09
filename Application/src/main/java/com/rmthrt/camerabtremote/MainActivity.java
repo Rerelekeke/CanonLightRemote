@@ -35,6 +35,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -70,6 +71,8 @@ public class MainActivity extends AppCompatActivity {
     public static String PERSISTENCY_USING_HEADSET = "usingheadset";
     public static String PERSISTENCY_USING_VOLUME_BUTTONS = "usingvolumebuttons";
     public static String PERSISTENCY_USING_VIBRATOR = "usingvvibrator";
+    public static String PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING = "usingphoneorbluetoothpairing";
+    public static BluetoothDevice mdevice;
 
 
     private void IntentDeviceConnection(BluetoothDevice device)
@@ -77,33 +80,45 @@ public class MainActivity extends AppCompatActivity {
         final Intent intent = new Intent(getApplicationContext(), DeviceControlActivity.class);
         intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
         intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+
         if(Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2  && device.getBondState() == BluetoothDevice.BOND_NONE) {
 
             device.createBond();
         }
+        if(device.getBondState() != BluetoothDevice.BOND_NONE)
+        {
+            if (mScanning) {
+                scanLeDevice(false);
+            }
 
-        if (mScanning) {
-            scanLeDevice(false);
+            mBluetoothAdapter.getBluetoothLeScanner().stopScan(mLeScanCallback);
+            mdevice = device;
+            startActivity(intent);
         }
 
-        mBluetoothAdapter.getBluetoothLeScanner().stopScan(mLeScanCallback);
-        startActivity(intent);
 
     }
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_launcher);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayUseLogoEnabled(true);
-        getSupportActionBar().setLogo(R.drawable.ic_launcher);
+        getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setTitle("Camera Bt Remote");
 
         persistency = getSharedPreferences(PERSISTENCY_DEVICE_ADDRESS, Context.MODE_PRIVATE);
         persistency = getSharedPreferences(PERSISTENCY_USING_HEADSET, Context.MODE_PRIVATE);
+        persistency = getSharedPreferences(PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING,Context.MODE_PRIVATE);
         persistency = getSharedPreferences(PERSISTENCY_USING_VOLUME_BUTTONS, Context.MODE_PRIVATE);
+
 
 
 
@@ -137,6 +152,25 @@ public class MainActivity extends AppCompatActivity {
             finish();
             return;
         }
+
+        if(persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null)=="")
+        {
+            final Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+            startActivity(intent);
+        }
+
+        String  alreadyPairedDevice = persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null);
+
+            if(alreadyPairedDevice==null)
+            {
+                SharedPreferences.Editor editor = MainActivity.persistency.edit();
+                editor.putBoolean(MainActivity.PERSISTENCY_USING_PHONE_OR_BLUETOOTH_PAIRING, false);
+                editor.commit();
+                final Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+                startActivity(intent);
+            }
+
+
     }
 
 
@@ -170,9 +204,15 @@ public class MainActivity extends AppCompatActivity {
             case R.id.menu_stop:
                 scanLeDevice(false);
                 break;
+            case android.R.id.home:
+                final Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+                startActivity(intent);
+                return true;
         }
         return true;
     }
+
+
 
     @Override
     protected void onResume() {
@@ -275,15 +315,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void addDevice(BluetoothDevice device) {
+            String  alreadyPairedDevice = persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null);
+
             if (!mLeDevices.contains(device)) {
                 mLeDevices.add(device);
 
-
-                String  alreadyPairedDevice = persistency.getString(PERSISTENCY_DEVICE_ADDRESS,null);
-
-                if(device.getAddress().equals(alreadyPairedDevice)){
+                if(device.getAddress().equals(alreadyPairedDevice) ){
                     IntentDeviceConnection(device);
-
                 }
             }
         }
@@ -462,5 +500,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
 
 }
