@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.rmthrt.camerabtremote"
-    android:versionCode="1"
-    android:versionName="1.0">
+    android:versionCode="111"
+    android:versionName="1.1.1">
 
     <!-- Min/target SDK versions (<uses-sdk>) managed by build.gradle -->
 
@@ -25,7 +25,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.Manifest.permission.MEDIA_CONTENT_CONTROL"/>
-
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <!-- Need location permission to use bluetooth if targetSDK above 22 -->
     <uses-permission-sdk-23 android:name="android.permission.ACCESS_COARSE_LOCATION" />
 <!-- TODO change ic_launcher icon -->
